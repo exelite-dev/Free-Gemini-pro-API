@@ -41,8 +41,8 @@
 ### محلی (Python 3.11+)
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/OmniBridge
-cd OmniBridge
+git clone https://github.com/exelite-dev/Free-Gemini-pro-API
+cd Free-Gemini-pro-API
 
 # نصب وابستگی‌ها
 pip install -r requirements.txt
@@ -180,7 +180,7 @@ Authorization: Bearer sk-omni-...
 
 ### Render.com (پیشنهادی — رایگان)
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/YOUR_USERNAME/OmniBridge)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/exelite-dev/Free-Gemini-pro-API)
 
 1. این ریپوزیتوری را Fork کنید
 2. روی دکمه بالا کلیک کنید
@@ -191,8 +191,8 @@ Authorization: Bearer sk-omni-...
 ### VPS / خودمیزبان
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/OmniBridge
-cd OmniBridge
+git clone https://github.com/exelite-dev/Free-Gemini-pro-API
+cd Free-Gemini-pro-API
 cp .env.example .env
 nano .env  # ADMIN_PASSWORD و ADMIN_SECRET_KEY را تنظیم کنید
 docker compose up -d --build

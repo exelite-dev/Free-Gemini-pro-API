@@ -64,8 +64,8 @@
 ### Local (Python 3.11+)
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/OmniBridge
-cd OmniBridge
+git clone https://github.com/exelite-dev/Free-Gemini-pro-API
+cd Free-Gemini-pro-API
 
 # Install dependencies
 pip install -r requirements.txt
@@ -212,7 +212,7 @@ Access at `http://localhost:8080/admin`
 
 ### Render (Recommended — Free)
 
-[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/YOUR_USERNAME/OmniBridge)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/exelite-dev/Free-Gemini-pro-API)
 
 1. Fork this repository
 2. Click the button above (or go to [render.com](https://dashboard.render.com) → New → Web Service → connect your fork)
@@ -222,13 +222,13 @@ Access at `http://localhost:8080/admin`
 
 ### Railway
 
-[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/YOUR_USERNAME/OmniBridge)
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https://github.com/exelite-dev/Free-Gemini-pro-API)
 
 ### VPS / Self-Hosted
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/OmniBridge
-cd OmniBridge
+git clone https://github.com/exelite-dev/Free-Gemini-pro-API
+cd Free-Gemini-pro-API
 cp .env.example .env
 nano .env  # set ADMIN_PASSWORD and ADMIN_SECRET_KEY
 docker compose up -d --build
