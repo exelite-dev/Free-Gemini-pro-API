@@ -260,6 +260,11 @@ pip install pytest
 python -m pytest tests/ -v
 ```
 
+<br><br>
+<div align="center">
+<img src="docs/art.jpg" alt="OmniBridge Art" width="500">
+</div>
+
 ## 📄 مجوز
 
 مجوز MIT — جزئیات در فایل [LICENSE](LICENSE).
@@ -267,9 +272,3 @@ python -m pytest tests/ -v
 ## 📢 کانال تلگرام
 
 برای دریافت آپدیت، آموزش، و پشتیبانی: [@Config_Vortex55](https://t.me/Config_Vortex55)
-
-<br><br>
-<div align="center">
-<img src="docs/art.jpg" alt="OmniBridge Art" width="500">
-</div>
-
