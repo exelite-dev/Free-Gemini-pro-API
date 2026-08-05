@@ -169,6 +169,19 @@ class AnthropicMessage(BaseModel):
         texts = [b.text for b in self.content if b.type == "text" and b.text]
         return "\n".join(texts)
 
+    def get_images(self) -> List[str]:
+        if isinstance(self.content, str):
+            return []
+        images = []
+        for b in self.content:
+            if b.type == "image" and b.source:
+                # format for anthropic is data base64
+                media_type = b.source.get("media_type", "image/jpeg")
+                data = b.source.get("data", "")
+                if data:
+                    images.append(f"data:{media_type};base64,{data}")
+        return images
+
 
 class AnthropicRequest(BaseModel):
     model: str
@@ -296,7 +309,7 @@ def anthropic_request_to_unified(req: AnthropicRequest, provider: str) -> Unifie
     if req.system:
         msgs.append(UnifiedMessage(role="system", text=req.system))
     for m in req.messages:
-        msgs.append(UnifiedMessage(role=m.role, text=m.get_text()))
+        msgs.append(UnifiedMessage(role=m.role, text=m.get_text(), images=m.get_images()))
     return UnifiedRequest(
         model_id=req.model,
         provider=provider,

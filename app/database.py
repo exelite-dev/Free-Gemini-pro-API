@@ -44,7 +44,8 @@ CREATE TABLE IF NOT EXISTS accounts (
     enabled     INTEGER NOT NULL DEFAULT 1,
     last_used   REAL,
     fail_count  INTEGER NOT NULL DEFAULT 0,
-    created_at  REAL    NOT NULL
+    created_at  REAL    NOT NULL,
+    cooldown_until REAL DEFAULT 0
 );
 
 CREATE TABLE IF NOT EXISTS provider_config (
@@ -257,6 +258,49 @@ async def list_accounts(provider: Optional[str] = None) -> List[Dict[str, Any]]:
             d["credentials"] = creds
             result.append(d)
         return result
+
+
+async def get_available_account(provider: str) -> Optional[Dict[str, Any]]:
+    """Get a random enabled account for the provider that is not in cooldown."""
+    now = time.time()
+    async with get_db() as db:
+        # Try to add the column if it doesn't exist yet (for smooth upgrade)
+        try:
+            await db.execute("ALTER TABLE accounts ADD COLUMN cooldown_until REAL DEFAULT 0")
+        except Exception:
+            pass
+            
+        async with db.execute(
+            """
+            SELECT * FROM accounts 
+            WHERE provider = ? 
+              AND enabled = 1 
+              AND (cooldown_until IS NULL OR cooldown_until <= ?)
+            ORDER BY RANDOM() LIMIT 1
+            """,
+            (provider, now)
+        ) as cur:
+            row = await cur.fetchone()
+            if row:
+                d = dict(row)
+                if isinstance(d["credentials"], str):
+                    try:
+                        d["credentials"] = json.loads(d["credentials"])
+                    except Exception:
+                        d["credentials"] = {}
+                return d
+    return None
+
+
+async def set_account_cooldown(account_id: int, minutes: int = 1) -> None:
+    now = time.time()
+    cooldown_until = now + (minutes * 60)
+    async with get_db() as db:
+        await db.execute(
+            "UPDATE accounts SET cooldown_until = ? WHERE id = ?",
+            (cooldown_until, account_id)
+        )
+        await db.commit()
 
 
 def _mask_credentials(creds: Dict[str, Any]) -> Dict[str, str]:

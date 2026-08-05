@@ -13,12 +13,25 @@ import re
 import uuid
 from typing import Any, AsyncGenerator, Dict, List, Optional
 
+import base64
+import httpx
 from curl_cffi.requests import AsyncSession
 
+from app.database import update_account_credentials
 from app.models import UnifiedMessage, UnifiedRequest
 from app.providers.base import AbstractProvider, AuthError, ProviderError, RateLimitError
 
 logger = logging.getLogger(__name__)
+
+# Normalize internal model ids to official google API model ids
+def _map_api_model_id(model_id: str) -> str:
+    mapping = {
+        "gemini-3.6-flash": "gemini-1.5-flash-latest",
+        "gemini-3.1-pro": "gemini-1.5-pro-latest",
+        "gemini-pro-extended": "gemini-1.5-pro-latest",
+        "gemini-3.5-flash-lite": "gemini-1.5-flash-8b-latest",
+    }
+    return mapping.get(model_id, model_id)
 
 # ── Gemini web API endpoints ──────────────────────────────────────────────────
 _GENERATE_URL = (
@@ -257,6 +270,137 @@ class GeminiEngine(AbstractProvider):
             )
         return at_token, bl_token, session_id
 
+    async def _download_image(self, url: str) -> Optional[tuple[str, str]]:
+        """Download image from URL and return (mime_type, base64_data)."""
+        try:
+            async with httpx.AsyncClient(timeout=10) as client:
+                resp = await client.get(url)
+                if resp.status_code == 200:
+                    mime_type = resp.headers.get("content-type", "image/jpeg")
+                    b64 = base64.b64encode(resp.content).decode("utf-8")
+                    return mime_type, b64
+        except Exception as e:
+            logger.warning("Failed to download image %s: %s", url, e)
+        return None
+
+    async def _build_api_payload(self, request: UnifiedRequest) -> Dict[str, Any]:
+        contents = []
+        system_instruction = None
+
+        for msg in request.messages:
+            if msg.role == "system":
+                if not system_instruction:
+                    system_instruction = {"role": "user", "parts": []}
+                system_instruction["parts"].append({"text": msg.text})
+                continue
+
+            parts = []
+            if msg.text:
+                parts.append({"text": msg.text})
+
+            for img in getattr(msg, "images", []):
+                if img.startswith("data:"):
+                    try:
+                        header, b64_data = img.split(",", 1)
+                        mime_type = header.split(";")[0].replace("data:", "")
+                        parts.append({
+                            "inline_data": {
+                                "mime_type": mime_type,
+                                "data": b64_data
+                            }
+                        })
+                    except Exception:
+                        pass
+                elif img.startswith("http"):
+                    img_data = await self._download_image(img)
+                    if img_data:
+                        mime_type, b64_data = img_data
+                        parts.append({
+                            "inline_data": {
+                                "mime_type": mime_type,
+                                "data": b64_data
+                            }
+                        })
+            
+            role = "model" if msg.role == "assistant" else "user"
+            contents.append({"role": role, "parts": parts})
+
+        payload = {"contents": contents}
+        if system_instruction:
+            payload["systemInstruction"] = system_instruction
+            
+        gen_config = {}
+        if request.temperature is not None:
+            gen_config["temperature"] = request.temperature
+        if request.max_tokens is not None:
+            gen_config["maxOutputTokens"] = request.max_tokens
+            
+        if gen_config:
+            payload["generationConfig"] = gen_config
+
+        return payload
+
+    async def _stream_chat_official_api(
+        self,
+        request: UnifiedRequest,
+        account_id: int,
+        credentials: Dict[str, Any],
+    ) -> AsyncGenerator[str, None]:
+        api_key = credentials.get("api_key")
+        if not api_key:
+            raise ProviderError(
+                "این کاربر از عکسی استفاده کرده است اما اکانت Gemini مربوطه (API Key) را برای پشتیبانی از عکس وارد نکرده است.", 
+                status_code=400
+            )
+
+        model_name = _map_api_model_id(request.model_id)
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:streamGenerateContent?key={api_key}&alt=sse"
+        
+        payload = await self._build_api_payload(request)
+
+        async with AsyncSession(timeout=self.request_timeout) as client:
+            try:
+                resp = await client.post(
+                    url,
+                    json=payload,
+                    headers={"Content-Type": "application/json"},
+                    stream=True,
+                )
+                
+                if resp.status_code == 400:
+                    raise ProviderError(f"Bad Request: {resp.text}", retry=False)
+                elif resp.status_code in (401, 403):
+                    raise AuthError(f"Invalid or unauthorized API Key for account #{account_id}")
+                elif resp.status_code == 429:
+                    raise RateLimitError(f"Rate limited on Official API for account #{account_id}")
+                elif resp.status_code != 200:
+                    raise ProviderError(f"Official API error {resp.status_code}: {resp.text}", retry=True)
+
+                async for line in resp.aiter_lines():
+                    if isinstance(line, bytes):
+                        line = line.decode("utf-8")
+                    line = line.strip()
+                    if not line:
+                        continue
+                    if line.startswith("data: "):
+                        data_str = line[len("data: "):]
+                        if data_str == "[DONE]":
+                            break
+                        try:
+                            data = json.loads(data_str)
+                            candidates = data.get("candidates", [])
+                            if candidates:
+                                parts = candidates[0].get("content", {}).get("parts", [])
+                                if parts and "text" in parts[0]:
+                                    yield parts[0]["text"]
+                        except json.JSONDecodeError:
+                            pass
+                            
+            except (AuthError, RateLimitError, ProviderError):
+                raise
+            except Exception as e:
+                raise ProviderError(f"Network error on Official API: {e}")
+
     async def chat(
         self,
         request: UnifiedRequest,
@@ -274,6 +418,12 @@ class GeminiEngine(AbstractProvider):
         account_id: int,
         credentials: Dict[str, Any],
     ) -> AsyncGenerator[str, None]:
+        has_images = any(getattr(m, "images", None) for m in request.messages)
+        if has_images:
+            async for chunk in self._stream_chat_official_api(request, account_id, credentials):
+                yield chunk
+            return
+
         cookie_header = _build_cookie_header(credentials)
 
         # Combine all messages into a single prompt

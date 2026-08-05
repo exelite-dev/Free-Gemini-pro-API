@@ -144,7 +144,7 @@
     <!-- ── PAGE: Accounts ── -->
     <div id="page-accounts" class="page">
       <div class="page-header">
-        <h1>مدیریت استخر اکانت‌ها</h1>
+        <h1>مدیریت مجموعه اکانت‌ها</h1>
         <p>افزودن و پیکربندی اکانت‌های پروکسی جهت توزیع بار (Load Balancing)</p>
       </div>
 
@@ -176,16 +176,27 @@
                 <label for="cred-psidts">کوکی __Secure-1PSIDTS</label>
                 <input id="cred-psidts" type="password" placeholder="sidts-CjYBP..." class="ltr"/>
               </div>
+              <div class="form-group" style="margin-top:1rem; padding:1rem; border:1px solid rgba(255,255,255,0.1); border-radius:var(--radius-md); background:rgba(0,0,0,0.15)">
+                <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer;">
+                  <input type="checkbox" id="cred-vision-toggle" onchange="document.getElementById('vision-key-wrap').style.display=this.checked?'block':'none'"/>
+                  <span style="font-weight:600; color:var(--accent-primary)">پشتیبانی از پردازش عکس (نیاز به API Key رسمی)</span>
+                </label>
+                <div id="vision-key-wrap" style="display:none; margin-top:0.75rem;">
+                  <label for="cred-apikey" style="font-size:0.85rem">Google Gemini API Key (AI Studio)</label>
+                  <input id="cred-apikey" type="password" placeholder="AIzaSy..." class="ltr"/>
+                  <small style="color:var(--text-muted); display:block; margin-top:0.3rem">اگر کاربر عکسی بفرستد، سیستم به جای کوکی‌ها، از این کلید برای پردازش عکس استفاده می‌کند.</small>
+                </div>
+              </div>
             </div>
           </div>
 
-          <button class="btn btn-primary" id="save-acct-btn" style="width:100%;margin-top:0.75rem" onclick="addAccount()">ذخیره و ثبت در استخر</button>
+          <button class="btn btn-primary" id="save-acct-btn" style="width:100%;margin-top:0.75rem" onclick="addAccount()">ذخیره و ثبت در مجموعه</button>
         </div>
 
         <!-- Info / Quick stats Card -->
         <div class="card">
           <div class="card-header">
-            <h3>آمار استخر فعال</h3>
+            <h3>آمار مجموعه فعال</h3>
           </div>
           <div style="display:flex;flex-direction:column;gap:1.25rem;margin-top:0.5rem">
             <div style="background:var(--bg-surface);padding:1.25rem;border-radius:var(--radius-md);border:1px solid rgba(99,102,241,0.25)">
@@ -882,6 +893,15 @@ async function editAccount(id) {
   if (acct.provider === 'gemini') {
     $('cred-psid').value = creds.secure_1psid || '';
     $('cred-psidts').value = creds.secure_1psidts || '';
+    if (creds.api_key) {
+      $('cred-vision-toggle').checked = true;
+      $('vision-key-wrap').style.display = 'block';
+      $('cred-apikey').value = creds.api_key;
+    } else {
+      $('cred-vision-toggle').checked = false;
+      $('vision-key-wrap').style.display = 'none';
+      $('cred-apikey').value = '';
+    }
   }
   
   // Set edit mode ID on save button
@@ -904,6 +924,12 @@ async function addAccount() {
     const psidts = $('cred-psidts').value.trim();
     if (!psid) { toast('لطفاً کوکی __Secure-1PSID را وارد کنید', 'error'); return; }
     credentials = { secure_1psid: psid, secure_1psidts: psidts };
+    
+    if ($('cred-vision-toggle').checked) {
+      const apiKey = $('cred-apikey').value.trim();
+      if (!apiKey) { toast('لطفاً کلید API را برای پشتیبانی از عکس وارد کنید', 'error'); return; }
+      credentials.api_key = apiKey;
+    }
   }
 
   try {
@@ -918,7 +944,7 @@ async function addAccount() {
       toast(editId ? 'اکانت با موفقیت ویرایش شد!' : 'اکانت جدید با موفقیت اضافه شد!', 'success');
       $('acct-label').value='';
       $('cred-fields').querySelectorAll('input').forEach(i=>i.value='');
-      btn.textContent = 'ذخیره و ثبت در استخر';
+      btn.textContent = 'ذخیره و ثبت در مجموعه';
       btn.removeAttribute('data-edit-id');
       loadAccounts();
     } else {
