@@ -1,6 +1,7 @@
 # OmniBridge — پروکسی هوش مصنوعی با API سازگار با OpenAI
 
 <div align="center">
+<img src="docs/banner.png" alt="Free Gemini Pro API" width="100%">
 <br>
 <a href="README.md"><strong>🇺🇸 Click here for English README</strong></a>
 <br>

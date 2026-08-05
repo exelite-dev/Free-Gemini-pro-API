@@ -1,6 +1,8 @@
 # OmniBridge
 
 <div align="center">
+<img src="docs/banner.png" alt="Free Gemini Pro API" width="100%">
+
 <br>
 <a href="README.fa.md"><strong>🇮🇷 برای مطالعه راهنمای فارسی اینجا کلیک کنید</strong></a>
 <br>
