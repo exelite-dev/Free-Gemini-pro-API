@@ -1,6 +1,9 @@
 # OmniBridge — پروکسی هوش مصنوعی با API سازگار با OpenAI
 
 <div align="center">
+<br>
+<a href="README.md"><strong>🇺🇸 Click here for English README</strong></a>
+<br>
 
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.111+-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)

@@ -1,6 +1,9 @@
 # OmniBridge
 
 <div align="center">
+<br>
+<a href="README.fa.md"><strong>🇮🇷 برای مطالعه راهنمای فارسی اینجا کلیک کنید</strong></a>
+<br>
 
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.111+-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
