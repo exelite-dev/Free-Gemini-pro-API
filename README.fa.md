@@ -259,10 +259,6 @@ python -m pytest tests/ -v
 
 مجوز MIT — جزئیات در فایل [LICENSE](LICENSE).
 
-## 🤝 مشارکت
-
-Pull request‌ها歡迎 هستند! راهنمای مشارکت را در [CONTRIBUTING.md](CONTRIBUTING.md) ببینید.
-
 ## 📢 کانال تلگرام
 
 برای دریافت آپدیت، آموزش، و پشتیبانی: [@Config_Vortex55](https://t.me/Config_Vortex55)

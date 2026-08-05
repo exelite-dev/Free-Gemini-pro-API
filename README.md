@@ -296,11 +296,6 @@ python -m pytest tests/ -v
 
 MIT License — see [LICENSE](LICENSE) for details.
 
-## 🤝 Contributing
-
-Pull requests are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.  
-For major changes, please open an issue first to discuss your proposal.
-
 ## 📢 Community
 
 - **Telegram:** [@Config_Vortex55](https://t.me/Config_Vortex55) — updates, tips, and support
