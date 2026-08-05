@@ -1,0 +1,44 @@
+version: "3.9"
+
+services:
+  omnibridge:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: omnibridge
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      # ── Server ──────────────────────────────
+      HOST: "0.0.0.0"
+      PORT: "8000"
+      LOG_LEVEL: "info"
+      # ── Admin ───────────────────────────────
+      ADMIN_USERNAME: "${ADMIN_USERNAME:-admin}"
+      ADMIN_PASSWORD: "${ADMIN_PASSWORD:-changeme}"
+      ADMIN_SECRET_KEY: "${ADMIN_SECRET_KEY:-supersecretkey}"
+      # ── Providers ───────────────────────────
+      GEMINI_ENABLED: "${GEMINI_ENABLED:-true}"
+      # ── Database ────────────────────────────
+      DATABASE_PATH: "/app/data/omnibridge.db"
+      CONFIG_FILE: "/app/config.yaml"
+    volumes:
+      - omnibridge_data:/app/data
+      - ./config.yaml:/app/config.yaml:ro
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 15s
+    networks:
+      - omnibridge_net
+
+volumes:
+  omnibridge_data:
+    driver: local
+
+networks:
+  omnibridge_net:
+    driver: bridge

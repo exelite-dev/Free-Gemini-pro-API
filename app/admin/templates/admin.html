@@ -1,0 +1,1233 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>OmniBridge — پنل مدیریت هوشمند</title>
+  <meta name="description" content="OmniBridge — داشبورد مدیریت پیشرفته پروکسی."/>
+  <link rel="stylesheet" href="/admin/static/css/admin.css"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+</head>
+<body>
+
+<!-- ══════════════════════════════════════════════════════ LOGIN ══ -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <h1>⬡ OmniBridge</h1>
+      <p>داشبورد مدیریت سیستم · لطفاً لاگین کنید</p>
+    </div>
+    <div class="form-group">
+      <label for="login-user">نام کاربری</label>
+      <input id="login-user" type="text" placeholder="admin" autocomplete="username" class="ltr"/>
+    </div>
+    <div class="form-group">
+      <label for="login-pass">رمز عبور</label>
+      <input id="login-pass" type="password" placeholder="••••••••" autocomplete="current-password" class="ltr"/>
+    </div>
+    <div id="login-error" style="color:var(--accent-danger);font-size:0.85rem;margin-bottom:1rem;display:none;text-align:center;"></div>
+    <button class="btn btn-primary" style="width:100%" id="login-btn" onclick="doLogin()">ورود به حساب مدیریت</button>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ APP ══ -->
+<div id="app">
+
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <h2>⬡ OmniBridge</h2>
+      <span>مدیریت هوشمند AI Proxy</span>
+    </div>
+    <nav class="nav-section">
+      <div class="nav-label">نمای کلی</div>
+      <div class="nav-item active" data-page="dashboard" onclick="showPage('dashboard')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        <span>داشبورد اصلی</span>
+      </div>
+      <div class="nav-item" data-page="accounts" onclick="showPage('accounts')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+        <span>مدیریت اکانت‌ها</span>
+      </div>
+      <div class="nav-label" style="margin-top:1rem">ابزارها & API</div>
+      <div class="nav-item" data-page="cookies" onclick="showPage('cookies')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+        <span>راهنمای استخراج کوکی</span>
+      </div>
+      <div class="nav-item" data-page="apikeys" onclick="showPage('apikeys')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
+        <span>کلیدهای دسترسی (API Keys)</span>
+      </div>
+      <div class="nav-item" data-page="integration" onclick="showPage('integration')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
+        <span>اتصال به Cursor و نرم‌افزارها</span>
+      </div>
+      <div class="nav-item" data-page="deployment" onclick="showPage('deployment')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"/><line x1="12" y1="11" x2="12" y2="17"/><polyline points="9 14 12 11 15 14"/></svg>
+        <span>راهنمای دیپلوی و میزبانی</span>
+      </div>
+      <div class="nav-item" data-page="playground" onclick="showPage('playground')">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+        <span>محیط تست مدل‌ها (Playground)</span>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="https://t.me/Config_Vortex55" target="_blank" class="btn btn-primary btn-sm" style="width:100%;margin-bottom:0.6rem;background:linear-gradient(135deg, #0088cc 0%, #00b2ff 100%);border:none;display:flex;align-items:center;justify-content:center;gap:0.4rem;box-shadow:0 0 15px rgba(0,136,204,0.4);text-decoration:none;color:#fff;font-weight:700">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69.01-.03.01-.14-.07-.2-.08-.06-.19-.04-.27-.02-.12.02-1.96 1.25-5.54 3.69-.52.36-1 .54-1.42.53-.47-.01-1.37-.26-2.03-.48-.82-.27-1.47-.42-1.42-.88.03-.24.37-.49 1.02-.75 3.99-1.74 6.66-2.89 8.01-3.45 3.81-1.59 4.6-1.87 5.12-1.88.11 0 .37.03.54.18.14.12.18.28.2.45-.02.07-.02.16-.04.29z"/></svg>
+        <span>کانال Config_Vortex55</span>
+      </a>
+      <button class="btn btn-secondary btn-sm" onclick="doLogout()" style="width:100%">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+        خروج از حساب
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main Content -->
+  <main class="main-content">
+
+    <!-- ── PAGE: Dashboard ── -->
+    <div id="page-dashboard" class="page active">
+      <div class="page-header">
+        <h1>داشبورد اصلی</h1>
+        <p>پایش وضعیت لحظه‌ای درخواست‌ها و سلامتی موتورهای هوش مصنوعی</p>
+      </div>
+
+      <!-- Stats row -->
+      <div class="grid grid-4" style="margin-bottom:1.5rem">
+        <div class="stat-card">
+          <div class="stat-value" id="stat-total">—</div>
+          <div class="stat-label">کل درخواست‌ها (۱ ساعت)</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-success" style="color:var(--accent-success)">—</div>
+          <div class="stat-label">نرخ پاسخ‌دهی موفق</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value" id="stat-latency" style="color:var(--accent-warning)">—</div>
+          <div class="stat-label">میانگین زمان تاخیر (Latency)</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-value ltr" id="stat-providers" style="color:var(--accent-primary)">—</div>
+          <div class="stat-label">ارائه‌دهندگان فعال</div>
+        </div>
+      </div>
+
+      <!-- Provider Toggles Card -->
+      <div class="card" style="margin-bottom:1.5rem">
+        <div class="card-header">
+          <h3>تنظیمات ارائه‌دهندگان فعال (Provider Switches)</h3>
+          <span style="font-size:0.85rem;color:var(--text-muted)">روشن/خاموش کردن سرویس‌ها</span>
+        </div>
+        <div class="grid grid-1" style="gap:1rem">
+          <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg-surface);padding:1rem 1.25rem;border-radius:var(--radius-md);border:1px solid var(--glass-border)">
+            <div>
+              <div style="font-weight:700;font-size:0.95rem;color:var(--text-primary)">Google Gemini</div>
+              <div style="font-size:0.78rem;color:var(--text-secondary);margin-top:0.1rem">gemini-3-pro, gemini-3-flash, gemini-2.5-pro, gemini-2.5-flash</div>
+            </div>
+            <div class="toggle-switch" id="toggle-gemini" onclick="toggleProvider('gemini')"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chart Card -->
+      <div class="card">
+        <div class="card-header">
+          <h3>نمودار ترافیک و حجم درخواست‌ها</h3>
+        </div>
+        <div class="chart-container" style="height:320px;position:relative">
+          <canvas id="metricsChart"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PAGE: Accounts ── -->
+    <div id="page-accounts" class="page">
+      <div class="page-header">
+        <h1>مدیریت استخر اکانت‌ها</h1>
+        <p>افزودن و پیکربندی اکانت‌های پروکسی جهت توزیع بار (Load Balancing)</p>
+      </div>
+
+      <div class="grid grid-2" style="margin-bottom:1.5rem">
+        <!-- Add Account Card -->
+        <div class="card">
+          <div class="card-header">
+            <h3>افزودن اکانت جدید</h3>
+          </div>
+          <div class="form-group">
+            <label for="acct-provider">ارائه‌دهنده (Provider)</label>
+            <select id="acct-provider" onchange="onProviderSelectChange()">
+              <option value="gemini">Google Gemini</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="acct-label">عنوان یا برچسب شناسه</label>
+            <input id="acct-label" type="text" placeholder="مثلاً: اکانت اصلی Gemini Pro #1"/>
+          </div>
+
+          <!-- Dynamic cred fields -->
+          <div id="cred-fields">
+            <div id="cred-gemini">
+              <div class="form-group">
+                <label for="cred-psid">کوکی __Secure-1PSID</label>
+                <input id="cred-psid" type="password" placeholder="g.a000BAlB..." class="ltr"/>
+              </div>
+              <div class="form-group">
+                <label for="cred-psidts">کوکی __Secure-1PSIDTS</label>
+                <input id="cred-psidts" type="password" placeholder="sidts-CjYBP..." class="ltr"/>
+              </div>
+            </div>
+          </div>
+
+          <button class="btn btn-primary" id="save-acct-btn" style="width:100%;margin-top:0.75rem" onclick="addAccount()">ذخیره و ثبت در استخر</button>
+        </div>
+
+        <!-- Info / Quick stats Card -->
+        <div class="card">
+          <div class="card-header">
+            <h3>آمار استخر فعال</h3>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:1.25rem;margin-top:0.5rem">
+            <div style="background:var(--bg-surface);padding:1.25rem;border-radius:var(--radius-md);border:1px solid rgba(99,102,241,0.25)">
+              <div style="font-size:0.85rem;color:var(--accent-primary);font-weight:600">تعداد اکانت‌های Google Gemini</div>
+              <div style="font-size:2.2rem;font-weight:800;margin-top:0.2rem" id="gemini-acct-count">0</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Account Table -->
+      <div class="card">
+        <div class="card-header">
+          <h3>لیست اکانت‌های موجود</h3>
+          <button class="btn btn-secondary btn-sm" onclick="loadAccounts()">به‌روزرسانی جدول</button>
+        </div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>شناسه</th>
+                <th>ارائه‌دهنده</th>
+                <th>برچسب</th>
+                <th>وضعیت</th>
+                <th>تعداد خطاها</th>
+                <th>آخرین استفاده</th>
+                <th>عملیات‌ها</th>
+              </tr>
+            </thead>
+            <tbody id="accounts-tbody">
+              <tr><td colspan="7" style="text-align:center;color:var(--text-muted)">در حال بارگذاری لیست...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PAGE: Cookie Guide ── -->
+    <div id="page-cookies" class="page">
+      <div class="page-header">
+        <h1>راهنمای تصویری و گام‌به‌گام استخراج کوکی‌ها</h1>
+        <p>بدون نیاز به دانش فنی! فقط طبق مراحل ساده و تصاویر زیر پیش بروید</p>
+      </div>
+
+      <!-- Quick Shortcut Tips Banner -->
+      <div style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.25);padding:1.25rem 1.5rem;border-radius:var(--radius-md);margin-bottom:1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem">
+        <div style="display:flex;align-items:center;gap:0.75rem">
+          <div style="font-size:1.5rem">⌨️</div>
+          <div>
+            <div style="font-weight:700;color:var(--text-primary)">کلید میانبر باز کردن منوی ابزار (DevTools):</div>
+            <div style="font-size:0.85rem;color:var(--text-secondary)">در ویندوز کلید <code class="mono" style="background:rgba(255,255,255,0.1);padding:0.1rem 0.4rem;border-radius:4px">F12</code> یا <code class="mono" style="background:rgba(255,255,255,0.1);padding:0.1rem 0.4rem;border-radius:4px">Ctrl + Shift + I</code> را بزنید. (در مک: <code class="mono" style="background:rgba(255,255,255,0.1);padding:0.1rem 0.4rem;border-radius:4px">Cmd + Option + I</code>)</div>
+          </div>
+        </div>
+        <div style="font-size:0.85rem;color:var(--accent-success);background:rgba(16,185,129,0.1);padding:0.4rem 0.8rem;border-radius:var(--radius-full);border:1px solid rgba(16,185,129,0.3)">
+          💡 روش جایگزین: راست‌کلیک روی صفحه وب → گزینه Inspect (بازرسی)
+        </div>
+      </div>
+
+      <div class="grid grid-1" style="gap:1.5rem">
+        <!-- Gemini Guide -->
+        <div class="card">
+          <div class="card-header">
+            <h3>🌐 استخراج کوکی‌های Google Gemini (تصویری)</h3>
+            <span class="badge badge-blue">ویژه اکانت Gemini Pro/Advanced</span>
+          </div>
+
+          <!-- Step 1 -->
+          <div style="background:var(--bg-surface);padding:1rem;border-radius:var(--radius-md);margin-bottom:1rem;border:1px solid var(--glass-border)">
+            <div style="display:flex;align-items:center;gap:0.5rem;font-weight:700;color:var(--accent-primary);margin-bottom:0.4rem">
+              <span style="background:var(--accent-primary);color:#fff;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:0.75rem">۱</span>
+              ورود به سایت Gemini و باز کردن DevTools
+            </div>
+            <div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.7">
+              وارد سایت <a href="https://gemini.google.com" target="_blank" style="color:var(--accent-secondary);text-decoration:underline">gemini.google.com</a> شوید. کلید <code class="mono">F12</code> را روی کیبورد بزنید.
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div style="background:var(--bg-surface);padding:1rem;border-radius:var(--radius-md);margin-bottom:1rem;border:1px solid var(--glass-border)">
+            <div style="display:flex;align-items:center;gap:0.5rem;font-weight:700;color:var(--accent-primary);margin-bottom:0.4rem">
+              <span style="background:var(--accent-primary);color:#fff;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:0.75rem">۲</span>
+              رفتن به تب Application و بخش Cookies
+            </div>
+            <div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.7">
+              در تب بالا <strong style="color:var(--text-primary)">Application</strong> را بزنید. از سمت چپ: <strong style="color:var(--text-primary)">Cookies → gemini.google.com</strong> را کلیک کنید.
+            </div>
+          </div>
+
+          <!-- Real User Screenshot for Gemini Cookies -->
+          <div style="background:var(--bg-deep);border:1px solid var(--glass-border-hi);border-radius:var(--radius-md);padding:0.75rem;margin-bottom:1rem;text-align:center">
+            <div style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:0.6rem;font-weight:600">📸 تصویر واقعی محیط مرورگر Chrome DevTools (نحوه انتخاب __Secure-1PSID و __Secure-1PSIDTS):</div>
+            <img src="/admin/static/img/gemini_cookies_guide.png" alt="راهنمای تصویری کوکی های جمنای" style="width:100%;height:auto;border-radius:8px;border:1px solid rgba(255,255,255,0.15);box-shadow:0 8px 25px rgba(0,0,0,0.5)"/>
+            <div style="margin-top:0.6rem;font-size:0.8rem;color:var(--accent-success);background:rgba(16,185,129,0.1);padding:0.4rem 0.6rem;border-radius:var(--radius-sm);border:1px solid rgba(16,185,129,0.25)">
+              💡 مطابق تصویر فوق، کافیست روی مقدار جلوی <code class="mono">__Secure-1PSID</code> و <code class="mono">__Secure-1PSIDTS</code> دو بار کلیک کرده و کپی کنید.
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div style="background:var(--bg-surface);padding:1rem;border-radius:var(--radius-md);border:1px solid var(--glass-border)">
+            <div style="display:flex;align-items:center;gap:0.5rem;font-weight:700;color:var(--accent-success);margin-bottom:0.4rem">
+              <span style="background:var(--accent-success);color:#fff;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:0.75rem">۳</span>
+              کپی و قرار دادن در تب مدیریت اکانت‌ها
+            </div>
+            <div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.7">
+              به تب <strong style="color:var(--text-primary)">مدیریت اکانت‌ها</strong> بروید، دو مقدار کپی شده را جای‌گذاری کرده و «ذخیره» را بزنید!
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PAGE: API Keys ── -->
+    <div id="page-apikeys" class="page">
+      <div class="page-header">
+        <h1>مدیریت کلیدهای دسترسی (API Keys)</h1>
+        <p>ساخت کلید اختصاصی جهت استفاده در نرم‌افزارهای Cursor، NextChat، پایتون و...</p>
+      </div>
+
+      <div class="card" style="margin-bottom:1.5rem">
+        <div class="card-header">
+          <h3>ساخت کلید API جدید</h3>
+        </div>
+        <div style="display:flex;gap:1rem;align-items:flex-end;flex-wrap:wrap">
+          <div class="form-group" style="flex:1;margin-bottom:0;min-width:260px">
+            <label for="key-label">عنوان یا نام برنامه استفاده‌کننده</label>
+            <input id="key-label" type="text" placeholder="مثلاً: کلید برنامه Cursor Desktop"/>
+          </div>
+          <button class="btn btn-primary" onclick="createKey()">تولید کلید جدید</button>
+        </div>
+
+        <div id="new-key-display" style="display:none;margin-top:1.25rem;background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.3);padding:1.25rem;border-radius:var(--radius-md)">
+          <div style="font-size:0.85rem;color:var(--accent-success);margin-bottom:0.4rem;font-weight:600">کلید جدید شما آماده است (لطفاً آن را کپی و ذخیره کنید):</div>
+          <div style="display:flex;align-items:center;gap:0.75rem">
+            <code id="new-key-value" class="mono ltr" style="font-size:1.05rem;color:var(--text-primary);flex:1;background:var(--bg-deep);padding:0.5rem 0.8rem;border-radius:var(--radius-sm)"></code>
+            <button class="btn btn-secondary btn-sm" onclick="copyKey()">کپی در کلپ‌بورد</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3>کلیدهای دسترسی فعال</h3>
+        </div>
+        <div class="table-wrapper">
+          <table>
+            <thead>
+              <tr>
+                <th>عنوان کلید</th>
+                <th>مقدار کلید API</th>
+                <th>تاریخ ساخت</th>
+                <th>آخرین استفاده</th>
+                <th>وضعیت</th>
+                <th>عملیات</th>
+              </tr>
+            </thead>
+            <tbody id="keys-tbody">
+              <tr><td colspan="6" style="text-align:center;color:var(--text-muted)">در حال بارگذاری...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PAGE: Playground ── -->
+    <div id="page-playground" class="page">
+      <div class="page-header">
+        <h1>محیط چت و تست مدل‌ها (Playground)</h1>
+        <p>تست زنده مدل‌ها و ارسال مستقیم پرامپت از داخل پنل مدیریت</p>
+      </div>
+
+      <div class="grid grid-3" style="gap:1.5rem">
+        <!-- Settings sidebar -->
+        <div class="card" style="height:fit-content">
+          <div class="card-header">
+            <h3>تنظیمات مدل و پارامترها</h3>
+          </div>
+          <div class="form-group">
+            <label for="pg-apikey">کلید API</label>
+            <input id="pg-apikey" type="text" placeholder="sk-test" value="sk-test" class="ltr"/>
+          </div>
+          <div class="form-group">
+            <label for="pg-model">انتخاب مدل</label>
+            <select id="pg-model" class="ltr">
+              <option value="">در حال بارگذاری مدل‌ها...</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem">
+              <label for="pg-temp" style="margin-bottom:0">میزان خلاقیت (Temperature)</label>
+              <span class="badge badge-blue mono" id="pg-temp-val">0.7</span>
+            </div>
+            <input id="pg-temp" type="range" min="0" max="1" step="0.05" value="0.7" oninput="document.getElementById('pg-temp-val').textContent=this.value"/>
+          </div>
+          <div class="form-group">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.4rem">
+              <label for="pg-system" style="margin-bottom:0">دستور سیستم (System Prompt)</label>
+            </div>
+            <div style="display:flex;gap:0.4rem;margin-bottom:0.5rem;flex-wrap:wrap">
+              <button class="btn btn-secondary btn-sm" style="font-size:0.75rem;padding:0.25rem 0.6rem" onclick="document.getElementById('pg-system').value='تو یک مهندس نرم‌افزار و متخصص ارشد کدنویسی پایتون و جاوااسکریپت هستی. کدهای تمیز، بهینه و با توضیحات دقیق بنویس.'">💻 کدنویسی</button>
+              <button class="btn btn-secondary btn-sm" style="font-size:0.75rem;padding:0.25rem 0.6rem" onclick="document.getElementById('pg-system').value='تو یک مترجم ارشد و حرفه‌ای هستی. متون را با لحنی بسیار روان، دقیق و طبیعی به فارسی ترجمه کن.'">🌍 ترجمه</button>
+              <button class="btn btn-secondary btn-sm" style="font-size:0.75rem;padding:0.25rem 0.6rem" onclick="document.getElementById('pg-system').value='تو یک خلاصه‌ساز حرفه‌ای هستی. نکات کلیدی متن را به صورت بالت‌پوینت و فوق‌العاده کوتاه خلاصه‌سازی کن.'">⚡ خلاصه‌ساز</button>
+            </div>
+            <textarea id="pg-system" rows="3" placeholder="مثلاً: تو یک دستیار برنامه‌نویسی و تحلیل‌گر ارشد هستی."></textarea>
+          </div>
+          <button class="btn btn-secondary btn-sm" style="width:100%" onclick="clearChat()">پاک‌سازی محیط چت</button>
+        </div>
+
+        <!-- Chat area -->
+        <div class="card" style="grid-column:span 2;display:flex;flex-direction:column;height:620px;padding:1.25rem">
+          <div class="chat-container" id="chat-messages">
+            <div style="text-align:center;color:var(--text-muted);font-size:0.9rem;margin:auto">
+              <div style="font-size:2.5rem;margin-bottom:0.5rem">💬</div>
+              مدل مورد نظر را انتخاب کرده و گفتگو را شروع کنید.
+            </div>
+          </div>
+          
+          <!-- Modern ChatGPT-style Chat Bar -->
+          <div style="display:flex;flex-direction:column;margin-top:1rem;background:var(--bg-deep);border:1px solid var(--glass-border-hi);border-radius:var(--radius-md);padding:0.85rem">
+            <textarea id="chat-input" rows="3" placeholder="پیام خود را تایپ کنید... (Enter برای ارسال، Shift+Enter برای خط جدید)" onkeydown="handleChatKey(event)" style="border:none;background:transparent;resize:none;outline:none;width:100%;font-family:inherit;font-size:0.95rem;color:var(--text-primary)"></textarea>
+            <div style="display:flex;justify-content:space-between;align-items:center;padding-top:0.6rem;margin-top:0.4rem;border-top:1px solid var(--glass-border)">
+              <span style="font-size:0.75rem;color:var(--text-muted)">💡 کلید Enter برای ارسال سریع</span>
+              <button class="btn btn-primary" id="send-btn" onclick="sendChat()" style="padding:0.5rem 1.4rem">
+                <span>ارسال پیام</span>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PAGE: Integration ── -->
+    <div id="page-integration" class="page">
+      <div class="page-header">
+        <h1>راهنمای اتصال به Cursor و نرم‌افزارها</h1>
+        <p>تنظیمات آماده برای کپی و اتصال مستقیم OmniBridge به Cursor، NextChat، پایتون و غیره</p>
+      </div>
+
+      <!-- Quick Copy Cards -->
+      <div class="grid grid-3" style="gap:1.25rem;margin-bottom:1.5rem">
+        <div class="card" style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.3)">
+          <div style="font-size:0.8rem;color:var(--accent-primary);font-weight:700;margin-bottom:0.4rem">1️⃣ Base URL (آدرس اختصاصی سرور)</div>
+          <code class="mono ltr" style="display:block;background:var(--bg-deep);padding:0.6rem 0.8rem;border-radius:6px;font-size:0.95rem;color:#fff;margin-bottom:0.75rem">http://localhost:8080/v1</code>
+          <button class="btn btn-primary btn-sm" style="width:100%" onclick="navigator.clipboard.writeText('http://localhost:8080/v1');toast('آدرس Base URL کپی شد!','success')">کپی Base URL</button>
+        </div>
+
+        <div class="card" style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.3)">
+          <div style="font-size:0.8rem;color:var(--accent-success);font-weight:700;margin-bottom:0.4rem">2️⃣ API Key (کلید پیش‌فرض)</div>
+          <code class="mono ltr" style="display:block;background:var(--bg-deep);padding:0.6rem 0.8rem;border-radius:6px;font-size:0.95rem;color:#fff;margin-bottom:0.75rem">sk-test</code>
+          <button class="btn btn-success btn-sm" style="width:100%" onclick="navigator.clipboard.writeText('sk-test');toast('کلید API کپی شد!','success')">کپی API Key</button>
+        </div>
+
+        <div class="card" style="background:rgba(168,85,247,0.08);border:1px solid rgba(168,85,247,0.3)">
+          <div style="font-size:0.8rem;color:var(--accent-secondary);font-weight:700;margin-bottom:0.4rem">3️⃣ Model ID پیشنهادی</div>
+          <code class="mono ltr" style="display:block;background:var(--bg-deep);padding:0.6rem 0.8rem;border-radius:6px;font-size:0.95rem;color:#fff;margin-bottom:0.75rem">gemini-3.6-flash</code>
+          <button class="btn btn-secondary btn-sm" style="width:100%" onclick="navigator.clipboard.writeText('gemini-3.6-flash');toast('شناسه مدل کپی شد!','success')">کپی Model ID</button>
+        </div>
+      </div>
+
+      <!-- Models List Card -->
+      <div class="card" style="margin-bottom:1.5rem">
+        <div class="card-header">
+          <h3>📋 شناسه مدل‌های Gemini جهت افزودن به Cursor / Apps</h3>
+        </div>
+        <div class="grid grid-2" style="gap:1rem">
+          <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg-surface);padding:0.85rem 1.1rem;border-radius:var(--radius-sm);border:1px solid var(--glass-border)">
+            <div>
+              <div style="font-weight:700;font-size:0.9rem">gemini-3.6-flash</div>
+              <div style="font-size:0.75rem;color:var(--text-muted)">مدل اصلی، بسیار سریع و هوشمند (پیش‌فرض)</div>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="navigator.clipboard.writeText('gemini-3.6-flash');toast('کپی شد!','info')">کپی</button>
+          </div>
+
+          <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg-surface);padding:0.85rem 1.1rem;border-radius:var(--radius-sm);border:1px solid var(--glass-border)">
+            <div>
+              <div style="font-weight:700;font-size:0.9rem">gemini-3.1-pro</div>
+              <div style="font-size:0.75rem;color:var(--text-muted)">قدرتمندترین مدل کدنویسی و ریاضیات سنگین</div>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="navigator.clipboard.writeText('gemini-3.1-pro');toast('کپی شد!','info')">کپی</button>
+          </div>
+
+          <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg-surface);padding:0.85rem 1.1rem;border-radius:var(--radius-sm);border:1px solid var(--glass-border)">
+            <div>
+              <div style="font-weight:700;font-size:0.9rem">gemini-pro-extended</div>
+              <div style="font-size:0.75rem;color:var(--text-muted)">حالت استدلال عمیق (Extended Thinking)</div>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="navigator.clipboard.writeText('gemini-pro-extended');toast('کپی شد!','info')">کپی</button>
+          </div>
+
+          <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg-surface);padding:0.85rem 1.1rem;border-radius:var(--radius-sm);border:1px solid var(--glass-border)">
+            <div>
+              <div style="font-weight:700;font-size:0.9rem">gemini-3.5-flash-lite</div>
+              <div style="font-size:0.75rem;color:var(--text-muted)">سریع‌ترین مدل پاسخگویی آنی</div>
+            </div>
+            <button class="btn btn-secondary btn-sm" onclick="navigator.clipboard.writeText('gemini-3.5-flash-lite');toast('کپی شد!','info')">کپی</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step-by-Step Cursor Setup Guide -->
+      <div class="card">
+        <div class="card-header">
+          <h3>🖥️ راهنمای گام‌به‌گام اتصال در Cursor IDE</h3>
+        </div>
+        <div style="line-height:1.9;font-size:0.9rem;color:var(--text-secondary)">
+          <div style="margin-bottom:0.75rem">
+            <strong style="color:var(--accent-primary)">۱.</strong> نرم‌افزار <strong>Cursor</strong> را باز کنید و وارد <strong>Settings</strong> (آیکون چرخ‌دنده بالا سمت راست) شوید.
+          </div>
+          <div style="margin-bottom:0.75rem">
+            <strong style="color:var(--accent-primary)">۲.</strong> وارد تب <strong>Models</strong> شوید.
+          </div>
+          <div style="margin-bottom:0.75rem">
+            <strong style="color:var(--accent-primary)">۳.</strong> بخش <strong>OpenAI API Key</strong> را پیدا کنید:
+            <ul style="margin-top:0.4rem;padding-right:1.5rem">
+              <li>مقدار API Key را بگذارید: <code class="mono" style="background:var(--bg-deep);padding:0.1rem 0.4rem;border-radius:4px;color:#fff">sk-test</code></li>
+              <li>گزینه <strong>Override OpenAI Base URL</strong> را فعال کرده و مقدار را قرار دهید: <code class="mono" style="background:var(--bg-deep);padding:0.1rem 0.4rem;border-radius:4px;color:#fff">http://localhost:8080/v1</code></li>
+            </ul>
+          </div>
+          <div>
+            <strong style="color:var(--accent-primary)">۴.</strong> در لیست مدل‌ها روی <strong>Add model</strong> کلیک کرده و نام مدل را تایپ کنید: <code class="mono" style="background:var(--bg-deep);padding:0.1rem 0.4rem;border-radius:4px;color:#fff">gemini-3.6-flash</code>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PAGE: Deployment ── -->
+    <div id="page-deployment" class="page">
+      <div class="page-header">
+        <h1>🌐 راهنمای انتشار، دیپلوی و میزبانی (Deployment Guide)</h1>
+        <p>آموزش گام‌به‌گام راه‌اندازی OmniBridge روی سرویس‌های ابری رایگان و سرورهای اختصاصی جهت اشتراک‌گذاری با کاربران کانال تلگرام و گیت‌هاب</p>
+      </div>
+
+      <!-- FREE PLATFORMS -->
+      <div class="card" style="margin-bottom:1.5rem">
+        <div class="card-header" style="border-bottom:1px solid var(--glass-border);padding-bottom:0.75rem;margin-bottom:1.25rem">
+          <h3 style="color:var(--accent-success);display:flex;align-items:center;gap:0.5rem">
+            <span>🎁 ۱. دیپلوی روی سرویس‌های ابری ۱۰۰٪ رایگان</span>
+          </h3>
+        </div>
+
+        <div class="grid grid-2" style="gap:1.25rem">
+          <!-- Render.com -->
+          <div style="background:var(--bg-surface-elev);border:1px solid rgba(16,185,129,0.25);border-radius:var(--radius-md);padding:1.25rem">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">
+              <strong style="font-size:1.1rem;color:#fff">☁️ Render.com (پیشنهاد اصلی)</strong>
+              <span class="badge badge-green">رایگان + SSL</span>
+            </div>
+            <p style="font-size:0.85rem;line-height:1.7;margin-bottom:1rem;color:var(--text-secondary)">
+              بهترین پلتفرم رایگان برای اجرای پروکسی‌های FastAPI. این پروژه دارای فایل آماده <code class="mono">render.yaml</code> و <code class="mono">Dockerfile</code> است.
+            </p>
+            <ol style="font-size:0.85rem;line-height:1.8;padding-right:1.2rem;color:var(--text-secondary);margin-bottom:1rem">
+              <li>پروژه را به ریپوزیتوری <strong>GitHub</strong> خود منتقل (Push/Fork) کنید.</li>
+              <li>وارد سایت <a href="https://dashboard.render.com" target="_blank" style="color:var(--accent-secondary)">Render.com</a> شده و روی <strong>New +</strong> ← <strong>Web Service</strong> کلیک کنید.</li>
+              <li>ریپوزیتوری گیت‌هاب خود را متصل کرده و <strong>Runtime</strong> را روی <strong>Docker</strong> بگذارید.</li>
+              <li>در بخش Environment Variables متغیرهای زیر را ست کنید:
+                <div style="margin-top:0.4rem;background:var(--bg-deep);padding:0.5rem;border-radius:6px" class="mono ltr">
+                  ADMIN_USERNAME=admin<br/>
+                  ADMIN_PASSWORD=your_secure_password<br/>
+                  SECRET_KEY=your_random_secret_string
+                </div>
+              </li>
+              <li>روی <strong>Create Web Service</strong> کلیک کنید. آدرس لایو شما صادر می‌شود!</li>
+            </ol>
+          </div>
+
+          <!-- Hugging Face Spaces -->
+          <div style="background:var(--bg-surface-elev);border:1px solid rgba(6,182,212,0.25);border-radius:var(--radius-md);padding:1.25rem">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">
+              <strong style="font-size:1.1rem;color:#fff">🤗 Hugging Face Spaces</strong>
+              <span class="badge badge-blue">Docker SDK رایگان</span>
+            </div>
+            <p style="font-size:0.85rem;line-height:1.7;margin-bottom:1rem;color:var(--text-secondary)">
+              میزبانی فوق‌العاده با سهمیه منابع بالا و پایداری عالی بدون خاموش شدن سرور.
+            </p>
+            <ol style="font-size:0.85rem;line-height:1.8;padding-right:1.2rem;color:var(--text-secondary);margin-bottom:1rem">
+              <li>وارد <a href="https://huggingface.co/spaces" target="_blank" style="color:var(--accent-secondary)">HuggingFace Spaces</a> شوید.</li>
+              <li>روی <strong>Create new Space</strong> کلیک کرده و نام آن را مشخص کنید.</li>
+              <li>گزینه <strong>Space SDK</strong> را روی <strong>Docker</strong> و Blank Template قرار دهید.</li>
+              <li>فایل‌های کدهای OmniBridge را آپلود یا گیت کنید.</li>
+              <li>در فایل Dockerfile پورت 7860 را Expose کنید. وب‌سایت به صورت خودکار لایو می‌شود!</li>
+            </ol>
+          </div>
+        </div>
+      </div>
+
+      <!-- PAID & VPS PLATFORMS -->
+      <div class="card" style="margin-bottom:1.5rem">
+        <div class="card-header" style="border-bottom:1px solid var(--glass-border);padding-bottom:0.75rem;margin-bottom:1.25rem">
+          <h3 style="color:var(--accent-primary);display:flex;align-items:center;gap:0.5rem">
+            <span>⚡ ۲. میزبانی روی سرور اختصاصی و VPS (پولی / با بالاترین سرعت)</span>
+          </h3>
+        </div>
+
+        <div style="line-height:1.8;font-size:0.9rem;color:var(--text-secondary)">
+          <p style="margin-bottom:1rem">
+            برای کاربرانی که قصد دارند سرویس پروکسی را با پایداری ۹۹.۹٪، سرعت پاسخگویی آنی زیر ۱ ثانیه و پشتیبانی از صدها کاربر همزمان اجرا کنند، استفاده از سرور виртуальный (VPS) یا سرورهای خارجی پیشنهاد می‌شود:
+          </p>
+
+          <div class="grid grid-3" style="gap:1rem;margin-bottom:1.25rem">
+            <div style="background:var(--bg-deep);padding:1rem;border-radius:var(--radius-sm);border:1px solid var(--glass-border)">
+              <div style="font-weight:700;color:#fff;margin-bottom:0.3rem">🖥️ Hetzner / Vultr / DigitalOcean</div>
+              <div style="font-size:0.8rem">سرورهای خارجی ابری از ۴ الی ۵ یورو در ماه با اینترنت گیگابیتی و پینگ عالی.</div>
+            </div>
+
+            <div style="background:var(--bg-deep);padding:1rem;border-radius:var(--radius-sm);border:1px solid var(--glass-border)">
+              <div style="font-weight:700;color:#fff;margin-bottom:0.3rem">🇮🇷 سرورهای مجازی ایران</div>
+              <div style="font-size:0.8rem">مناسب برای کمترین تاخیر در اتصال کاربران داخل کشور (نیاز به پل بین‌الملل جهت اتصال به گوگل دارد).</div>
+            </div>
+
+            <div style="background:var(--bg-deep);padding:1rem;border-radius:var(--radius-sm);border:1px solid var(--glass-border)">
+              <div style="font-weight:700;color:#fff;margin-bottom:0.3rem">🐳 اجرای ۱-کلیکه داکر</div>
+              <div style="font-size:0.8rem">اجرای کل پروژه روی هر سروری فقط با دستور اختصاصی <code class="mono">docker compose up -d</code></div>
+            </div>
+          </div>
+
+          <!-- Docker Setup Commands -->
+          <div style="background:var(--bg-deep);border:1px solid var(--glass-border-hi);border-radius:var(--radius-md);padding:1.25rem">
+            <div style="font-weight:700;color:var(--accent-primary);margin-bottom:0.6rem">💻 دستورات راه‌اندازی سریع روی سرور مجازی (Linux Ubuntu):</div>
+            <pre class="mono ltr" style="background:#000;padding:1rem;border-radius:6px;color:#38bdf8;overflow-x:auto;font-size:0.85rem">
+# 1. کلون کردن ریپوزیتوری گیت‌هاب
+git clone https://github.com/YOUR_USERNAME/OmniBridge.git
+cd OmniBridge
+
+# 2. تنظیم متغیرهای محیطی
+cp .env.example .env
+nano .env
+
+# 3. اجرای مستقیم با Docker Compose
+docker compose up -d --build
+
+# 4. بررسی وضعیت اجرا
+docker compose ps
+docker compose logs -f
+</pre>
+          </div>
+        </div>
+      </div>
+
+      <!-- TELEGRAM & GITHUB PUBLISHING CHECKLIST -->
+      <div class="card">
+        <div class="card-header">
+          <h3>📢 چک‌لیست انتشار پروژه در گیت‌هاب و کانال تلگرام</h3>
+        </div>
+        <div style="line-height:1.9;font-size:0.9rem;color:var(--text-secondary)">
+          <div style="margin-bottom:0.75rem">
+            <strong style="color:var(--accent-success)">۱. عدم انتشار اطلاعات شخصی:</strong> مطمئن شوید فایل <code class="mono">omnibridge.db</code> و متغیرهای حساس شخصی شامل کوکی‌ها در فایل <code class="mono">.gitignore</code> قرار داشته باشند.
+          </div>
+          <div style="margin-bottom:0.75rem">
+            <strong style="color:var(--accent-success)">۲. فایل README کامل:</strong> پروژه دارای دو فایل راهنمای جامع <code class="mono">README.md</code> (انگلیسی) و <code class="mono">README.fa.md</code> (فارسی) است که تمام دستورات و اسکرین‌شات‌ها را داراست.
+          </div>
+          <div>
+            <strong style="color:var(--accent-success)">۳. دکمه Deploy to Render:</strong> می‌توانید لینک مستقیم زیر را در بنر کانال تلگرام خود برای کاربران قرار دهید تا با یک کلیک سرور اختصاصی خود را بسازند:
+            <code class="mono ltr" style="display:block;margin-top:0.4rem;background:var(--bg-deep);padding:0.6rem 0.8rem;border-radius:6px;color:#a855f7">https://render.com/deploy?repo=https://github.com/YOUR_USERNAME/OmniBridge</code>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!-- ══════════════════════════════════════════════════════ TOAST ══ -->
+<div id="toast-container"></div>
+
+<script>
+// ── Helpers ──
+const $ = id => document.getElementById(id);
+
+function toast(msg, type='info') {
+  const c = $('toast-container');
+  const d = document.createElement('div');
+  d.className = `toast toast-${type}`;
+  d.textContent = msg;
+  c.appendChild(d);
+  setTimeout(() => d.remove(), 4000);
+}
+
+function formatDate(ts) {
+  if (!ts) return 'هرگز';
+  return new Date(ts * 1000).toLocaleString('fa-IR');
+}
+
+function maskKey(key) {
+  if (!key || key.length < 12) return key;
+  return key.slice(0, 8) + '••••••••' + key.slice(-4);
+}
+
+async function apiCall(method, url, body=null) {
+  const opts = { method, headers: {} };
+  if (body) {
+    opts.headers['Content-Type'] = 'application/json';
+    opts.body = JSON.stringify(body);
+  }
+  const res = await fetch(url, opts);
+  if (res.status === 401 && !url.includes('/login') && !url.includes('/auth-check')) {
+    showLogin();
+  }
+  return res;
+}
+
+// ── Auth ──
+async function checkAuth() {
+  try {
+    const res = await fetch('/admin/api/auth-check');
+    const d = await res.json();
+    if (d.authenticated) {
+      showApp();
+    } else {
+      showLogin();
+    }
+  } catch(e) {
+    showLogin();
+  }
+}
+
+function showLogin() {
+  $('login-screen').style.display = 'flex';
+  $('app').style.display = 'none';
+}
+
+function showApp() {
+  $('login-screen').style.display = 'none';
+  $('app').style.display = 'flex';
+  showPage('dashboard');
+}
+
+async function doLogin() {
+  const username = $('login-user').value.trim();
+  const password = $('login-pass').value.trim();
+  const errDiv = $('login-error');
+  errDiv.style.display = 'none';
+
+  if (!username || !password) {
+    errDiv.textContent = 'لطفاً نام کاربری و رمز عبور را وارد کنید.';
+    errDiv.style.display = 'block';
+    return;
+  }
+
+  const btn = $('login-btn');
+  btn.disabled = true;
+  btn.textContent = 'در حال ورود...';
+
+  try {
+    const res = await fetch('/admin/api/login', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({username, password})
+    });
+    if (res.ok) {
+      showApp();
+    } else {
+      errDiv.textContent = 'نام کاربری یا رمز عبور اشتباه است.';
+      errDiv.style.display = 'block';
+    }
+  } catch(e) {
+    errDiv.textContent = 'خطا در برقراری ارتباط با سرور.';
+    errDiv.style.display = 'block';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'ورود به حساب مدیریت';
+  }
+}
+
+async function doLogout() {
+  await fetch('/admin/api/logout', {method: 'POST'});
+  showLogin();
+}
+
+// ── Navigation ──
+function showPage(pageId) {
+  document.querySelectorAll('.nav-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.page === pageId);
+  });
+  document.querySelectorAll('.page').forEach(el => {
+    el.classList.toggle('active', el.id === `page-${pageId}`);
+  });
+
+  if (pageId === 'dashboard') loadDashboard();
+  if (pageId === 'accounts')  loadAccounts();
+  if (pageId === 'apikeys')   loadKeys();
+  if (pageId === 'integration') loadKeys();
+  if (pageId === 'playground') loadPlaygroundModels();
+}
+
+// ── Dashboard ──
+let metricsChart = null;
+
+async function loadDashboard() {
+  try {
+    const res = await apiCall('GET', '/admin/api/metrics');
+    if (!res.ok) return;
+    const d = await res.json();
+    const m = d.metrics || {};
+    const p = d.providers || {};
+    const perProvider = m.per_provider || {};
+
+    // Aggregate stats across all providers
+    let totalReqs = 0, totalSucc = 0, totalLatSum = 0, provCount = 0;
+    for (const [pr, stats] of Object.entries(perProvider)) {
+      totalReqs += stats.total || 0;
+      totalSucc += stats.successes || 0;
+      totalLatSum += (stats.avg_latency_ms || 0) * (stats.total || 0);
+      provCount++;
+    }
+    const successRate = totalReqs > 0 ? ((totalSucc / totalReqs) * 100).toFixed(1) : '100.0';
+    const avgLat = totalReqs > 0 ? (totalLatSum / totalReqs).toFixed(0) : '0';
+
+    $('stat-total').textContent   = totalReqs;
+    $('stat-success').textContent = successRate + '%';
+    $('stat-latency').textContent = avgLat + ' ms';
+
+    const activeCount = Object.values(p).filter(Boolean).length;
+    $('stat-providers').textContent = `${activeCount} / ${Object.keys(p).length}`;
+
+    // Sync Toggles — only gemini exists now
+    const el = $('toggle-gemini');
+    if (el) el.classList.toggle('on', !!p['gemini']);
+
+    // Chart update
+    renderChart(m.time_series || []);
+  } catch(e) { console.error(e); }
+}
+
+function renderChart(timeseries) {
+  const ctx = $('metricsChart').getContext('2d');
+  // timeseries items: { bucket: <int offset from cutoff>, requests: <int>, ok: <int> }
+  const labels = timeseries.map(t => {
+    const minutesAgo = (timeseries.length - 1 - timeseries.indexOf(t));
+    if (minutesAgo === 0) return 'هم‌اکنون';
+    return `-${minutesAgo}min`;
+  });
+  const data   = timeseries.map(t => t.requests || 0);
+
+  if (metricsChart) metricsChart.destroy();
+
+  metricsChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: labels.length ? labels : ['۰', '۱۵', '۳۰', '۴۵'],
+      datasets: [{
+        label: 'حجم درخواست‌ها',
+        data: data.length ? data : [0, 0, 0, 0],
+        borderColor: '#6366f1',
+        backgroundColor: 'rgba(99,102,241,0.12)',
+        fill: true,
+        borderWidth: 3,
+        tension: 0.4,
+        pointBackgroundColor: '#6366f1',
+        pointRadius: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
+        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' }, beginAtZero: true }
+      }
+    }
+  });
+}
+
+async function toggleProvider(provider) {
+  const el = $(`toggle-${provider}`);
+  const nextState = !el.classList.contains('on');
+  try {
+    const res = await apiCall('POST', `/admin/api/providers/${provider}/toggle`, {enabled: nextState});
+    if (res.ok) {
+      el.classList.toggle('on', nextState);
+      toast(`ارائه‌دهنده ${provider} ${nextState ? 'فعال' : 'غیرفعال'} شد`, 'info');
+      await loadDashboard();
+    }
+  } catch(e) { toast('خطا در تغییر وضعیت ارائه‌دهنده', 'error'); }
+}
+
+// ── Accounts ──
+function onProviderSelectChange() {
+  const p = $('acct-provider').value;
+  $('cred-gemini').style.display = p === 'gemini' ? 'block' : 'none';
+}
+
+async function editAccount(id) {
+  const acct = (window._accountsCache || []).find(a => a.id === id);
+  if (!acct) return;
+  
+  $('acct-provider').value = acct.provider;
+  onProviderSelectChange();
+  $('acct-label').value = acct.label || '';
+  
+  let creds = {};
+  try { creds = typeof acct.credentials === 'string' ? JSON.parse(acct.credentials) : (acct.credentials || {}); } catch(e){}
+  
+  if (acct.provider === 'gemini') {
+    $('cred-psid').value = creds.secure_1psid || '';
+    $('cred-psidts').value = creds.secure_1psidts || '';
+  }
+  
+  // Set edit mode ID on save button
+  const btn = document.getElementById('save-acct-btn');
+  btn.textContent = 'ویرایش و بروزرسانی اکانت';
+  btn.setAttribute('data-edit-id', id);
+  toast(`اکانت #${id} برای ویرایش بارگذاری شد`, 'info');
+}
+
+async function addAccount() {
+  const btn = document.getElementById('save-acct-btn');
+  const editId = btn.getAttribute('data-edit-id');
+
+  const provider = $('acct-provider').value;
+  const label    = $('acct-label').value.trim();
+  let credentials = {};
+
+  if (provider === 'gemini') {
+    const psid   = $('cred-psid').value.trim();
+    const psidts = $('cred-psidts').value.trim();
+    if (!psid) { toast('لطفاً کوکی __Secure-1PSID را وارد کنید', 'error'); return; }
+    credentials = { secure_1psid: psid, secure_1psidts: psidts };
+  }
+
+  try {
+    let res;
+    if (editId) {
+      res = await apiCall('PUT', `/admin/api/accounts/${editId}`, { label, credentials });
+    } else {
+      res = await apiCall('POST', '/admin/api/accounts', { provider, label, credentials });
+    }
+
+    if (res.ok) {
+      toast(editId ? 'اکانت با موفقیت ویرایش شد!' : 'اکانت جدید با موفقیت اضافه شد!', 'success');
+      $('acct-label').value='';
+      $('cred-fields').querySelectorAll('input').forEach(i=>i.value='');
+      btn.textContent = 'ذخیره و ثبت در استخر';
+      btn.removeAttribute('data-edit-id');
+      loadAccounts();
+    } else {
+      const d = await res.json(); toast(d.detail||'عملیات ناموفق بود', 'error');
+    }
+  } catch(e) { toast('خطا: '+e, 'error'); }
+}
+
+async function loadAccounts() {
+  try {
+    const res = await apiCall('GET', '/admin/api/accounts');
+    if (!res.ok) return;
+    const accounts = await res.json();
+    window._accountsCache = accounts;
+    let gCount=0;
+    const rows = accounts.map(a => {
+      if (a.provider==='gemini') gCount++;
+      return `<tr>
+        <td>${a.id}</td>
+        <td><span class="badge badge-blue">${a.provider}</span></td>
+        <td>${a.label||'-'}</td>
+        <td>${a.enabled ? '<span class="badge badge-green">فعال</span>' : '<span class="badge badge-red">غیرفعال</span>'}</td>
+        <td>${a.fail_count||0}</td>
+        <td>${formatDate(a.last_used)}</td>
+        <td style="display:flex;gap:0.4rem;flex-wrap:wrap">
+          <button class="btn btn-success btn-sm" onclick="testAccount(${a.id})">تست اتصال</button>
+          <button class="btn btn-secondary btn-sm" onclick="editAccount(${a.id})">ویرایش</button>
+          <button class="btn btn-secondary btn-sm" onclick="toggleAccount(${a.id},${!a.enabled})">${a.enabled?'غیرفعال':'فعال‌سازی'}</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteAccount(${a.id})">حذف</button>
+        </td>
+      </tr>`;
+    });
+    $('accounts-tbody').innerHTML = rows.join('')||`<tr><td colspan="7" style="text-align:center;color:var(--text-muted)">هنوز اکانتی ثبت نشده است.</td></tr>`;
+    const gElem = $('gemini-acct-count');
+    if (gElem) gElem.textContent = gCount;
+
+    // Sync provider toggles
+    const stRes = await apiCall('GET', '/admin/api/providers');
+    if (stRes.ok) {
+      const states = await stRes.json();
+      ['gemini'].forEach(pr => {
+        const el = $(`toggle-${pr}`);
+        if (el) el.classList.toggle('on', !!states[pr]);
+      });
+    }
+  } catch(e) { console.error(e); }
+}
+
+async function toggleProvider(provider) {
+  const el = $(`toggle-${provider}`);
+  const currentState = el ? el.classList.contains('on') : false;
+  const newState = !currentState;
+  try {
+    const res = await apiCall('POST', `/admin/api/providers/${provider}/toggle`, { enabled: newState });
+    if (res.ok) {
+      if (el) el.classList.toggle('on', newState);
+      toast(`وضعیت ${provider} به ${newState ? 'فعال' : 'غیرفعال'} تغییر یافت`, 'success');
+      loadDashboard();
+    } else {
+      const d = await res.json();
+      toast(d.detail || 'خطا در تغییر وضعیت ارائه‌دهنده', 'error');
+    }
+  } catch(e) {
+    toast('خطا در ارتباط با سرور: ' + e, 'error');
+  }
+}
+
+async function testAccount(id) {
+  toast('در حال تست اتصال...', 'info');
+  const res = await apiCall('POST', `/admin/api/accounts/${id}/test`);
+  const d = await res.json();
+  if (d.success) toast('✅ اتصال با موفقیت برقرار شد!', 'success');
+  else toast(`❌ تست اتصال ناموفق: ${d.error||'خطای نامشخص'}`, 'error');
+}
+
+async function toggleAccount(id, enabled) {
+  await apiCall('POST', `/admin/api/accounts/${id}/toggle`, {enabled});
+  loadAccounts();
+}
+
+async function deleteAccount(id) {
+  if (!confirm('آیا از حذف این اکانت اطمینان دارید؟')) return;
+  await apiCall('DELETE', `/admin/api/accounts/${id}`);
+  toast('اکانت حذف شد', 'info');
+  loadAccounts();
+}
+
+// ── API Keys ──
+async function loadKeys() {
+  try {
+    const res = await apiCall('GET', '/admin/api/keys');
+    if (!res.ok) return;
+    const keys = await res.json();
+    const activeKey = keys.find(k => !k.revoked);
+    if (activeKey && activeKey.key_value) {
+      const pgInput = $('pg-apikey');
+      if (pgInput && (!pgInput.value || pgInput.value === 'sk-test')) {
+        pgInput.value = activeKey.key_value;
+      }
+    }
+    const rows = keys.filter(k=>!k.revoked).map(k => `<tr>
+      <td>${k.label||'-'}</td>
+      <td><span class="mono ltr">${maskKey(k.key_value)}</span></td>
+      <td>${formatDate(k.created_at)}</td>
+      <td>${formatDate(k.last_used)}</td>
+      <td><span class="badge badge-green">فعال</span></td>
+      <td><button class="btn btn-danger btn-sm" onclick="revokeKey(${k.id})">لغو کلید</button></td>
+    </tr>`);
+    $('keys-tbody').innerHTML = rows.join('')||`<tr><td colspan="6" style="text-align:center;color:var(--text-muted)">هیچ کلید فعالی وجود ندارد.</td></tr>`;
+  } catch(e) { console.error(e); }
+}
+
+async function createKey() {
+  const label = $('key-label').value;
+  const res = await apiCall('POST', '/admin/api/keys', {label});
+  if (res.ok) {
+    const d = await res.json();
+    $('new-key-display').style.display='block';
+    $('new-key-value').textContent = d.key;
+    $('key-label').value='';
+    toast('کلید API جدید با موفقیت ساخته شد!', 'success');
+    loadKeys();
+  } else { toast('خطا در ساخت کلید API', 'error'); }
+}
+
+function copyKey() {
+  navigator.clipboard.writeText($('new-key-value').textContent);
+  toast('کلید API کپی شد!', 'success');
+}
+
+async function revokeKey(id) {
+  if (!confirm('آیا از لغو این کلید اطمینان دارید؟ این عمل غیرقابل بازگشت است.')) return;
+  await apiCall('DELETE', `/admin/api/keys/${id}`);
+  toast('کلید لغو شد', 'info');
+  $('new-key-display').style.display='none';
+  loadKeys();
+}
+
+// ── Playground ──
+async function loadPlaygroundModels() {
+  try {
+    loadKeys();
+    const res = await apiCall('GET', '/admin/api/models');
+    if (!res.ok) return;
+    const models = await res.json();
+    const sel = $('pg-model');
+    sel.innerHTML = models.map(m =>
+      `<option value="${m.id}">${m.display_name} (${m.provider})</option>`
+    ).join('');
+  } catch(e) {}
+}
+
+let chatHistory = [];
+function clearChat() {
+  chatHistory = [];
+  $('chat-messages').innerHTML = `<div style="text-align:center;color:var(--text-muted);font-size:0.9rem;margin:auto">
+    <div style="font-size:2.5rem;margin-bottom:0.5rem">💬</div>مدل را انتخاب کرده و گفتگو را شروع کنید.</div>`;
+}
+
+function appendMessage(role, content, streaming=false) {
+  const msgs = $('chat-messages');
+  const placeholder = msgs.querySelector('div[style*="margin:auto"]');
+  if (placeholder) placeholder.remove();
+
+  const div = document.createElement('div');
+  div.className = `chat-message ${role}`;
+  div.innerHTML = `<div class="msg-role">${role}</div><div class="msg-bubble" id="msg-${Date.now()}"></div>`;
+  msgs.appendChild(div);
+  msgs.scrollTop = msgs.scrollHeight;
+  return div.querySelector('.msg-bubble');
+}
+
+function handleChatKey(e) {
+  if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendChat(); }
+}
+
+async function sendChat() {
+  const input = $('chat-input').value.trim();
+  if (!input) return;
+  const apiKey = $('pg-apikey').value.trim();
+  const model  = $('pg-model').value;
+  const temp   = parseFloat($('pg-temp').value);
+  const system = $('pg-system').value.trim();
+
+  if (!apiKey) { toast('لطفاً یک کلید API وارد کنید', 'error'); return; }
+
+  $('chat-input').value='';
+  $('send-btn').disabled = true;
+
+  appendMessage('user', input);
+  chatHistory.push({role:'user', content: input});
+
+  const msgs = $('chat-messages');
+  const msgId = 'msg-' + Date.now();
+  const aDiv = document.createElement('div');
+  aDiv.className = 'chat-message assistant';
+  aDiv.innerHTML = `<div class="msg-role">assistant</div>
+    <div class="msg-bubble" id="${msgId}">
+      <div class="typing-indicator"><span></span><span></span><span></span></div>
+    </div>`;
+  msgs.appendChild(aDiv);
+  msgs.scrollTop = msgs.scrollHeight;
+
+  const bubble = $(msgId);
+  let fullText = '';
+
+  const messages = [];
+  if (system) messages.push({role:'system', content: system});
+  messages.push(...chatHistory);
+
+  try {
+    const response = await fetch('/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({ model, messages, stream: true, temperature: temp }),
+    });
+
+    if (!response.ok) {
+      let errMsg = 'خطای نامشخص';
+      try {
+        const errData = await response.json();
+        errMsg = errData.detail || errData.error?.message || errMsg;
+      } catch(e) {
+        errMsg = `کد خطا: ${response.status}`;
+      }
+      bubble.innerHTML = `<span style="color:var(--accent-danger)">خطا (${response.status}): ${errMsg}</span>`;
+      return;
+    }
+
+    bubble.textContent = '';
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let done = false;
+    let streamBuffer = '';
+
+    while (!done) {
+      const { done: streamDone, value } = await reader.read();
+      if (streamDone) break;
+      streamBuffer += decoder.decode(value, { stream: true });
+      const lines = streamBuffer.split('\n');
+      streamBuffer = lines.pop() || '';
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed.startsWith('data:')) continue;
+        const raw = trimmed.slice(5).trim();
+        if (raw === '[DONE]') { done = true; break; }
+        try {
+          const chunk = JSON.parse(raw);
+          // Handle server-sent error chunks
+          if (chunk.error && (chunk.error.message || chunk.error.detail)) {
+            const errTxt = chunk.error.message || chunk.error.detail;
+            bubble.innerHTML = `<span style="color:var(--accent-danger)">خطا: ${errTxt}</span>`;
+            done = true;
+            break;
+          }
+          const delta = chunk.choices?.[0]?.delta?.content || chunk.choices?.[0]?.text || '';
+          if (delta) {
+            fullText += delta;
+            bubble.textContent = fullText;
+            msgs.scrollTop = msgs.scrollHeight;
+          }
+        } catch(e) { /* ignore malformed chunks */ }
+      }
+    }
+
+    if (fullText) {
+      chatHistory.push({ role: 'assistant', content: fullText });
+      // Add copy button to assistant bubble
+      const copyBtn = document.createElement('button');
+      copyBtn.className = 'btn btn-secondary btn-sm';
+      copyBtn.style.cssText = 'margin-top:0.5rem;font-size:0.75rem;padding:0.25rem 0.6rem';
+      copyBtn.textContent = '📋 کپی پاسخ';
+      copyBtn.onclick = () => {
+        navigator.clipboard.writeText(fullText);
+        copyBtn.textContent = '✅ کپی شد!';
+        setTimeout(() => copyBtn.textContent = '📋 کپی پاسخ', 2000);
+      };
+      aDiv.querySelector('.msg-bubble').appendChild(copyBtn);
+    } else if (!bubble.innerHTML.includes('خطا')) {
+      bubble.innerHTML = `<span style="color:var(--accent-danger)">خطا: پاسخی از ارائه‌دهنده دریافت نشد. لطفاً از اعتبار کوکی/کلید مطمئن شوید.</span>`;
+    }
+  } catch(e) {
+    bubble.innerHTML = `<span style="color:var(--accent-danger)">خطای شبکه: ${e.message}</span>`;
+  } finally {
+    $('send-btn').disabled = false;
+    $('chat-input').focus();
+  }
+}
+
+// Init & Auto Refresh
+window.addEventListener('DOMContentLoaded', () => {
+  checkAuth();
+
+  // Enter key triggers login
+  [$('login-user'), $('login-pass')].forEach(el => {
+    if (el) el.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+  });
+
+  setInterval(() => {
+    const activePage = document.querySelector('.page.active');
+    if (activePage && activePage.id === 'page-dashboard') {
+      loadDashboard();
+    }
+  }, 5000);
+});
+</script>
+</body>
+</html>

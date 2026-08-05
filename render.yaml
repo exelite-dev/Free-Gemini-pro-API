@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: omnibridge
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    plan: free
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.0"
+      - key: ADMIN_USERNAME
+        generateValue: false
+        value: admin
+      - key: ADMIN_PASSWORD
+        generateValue: true
+      - key: ADMIN_SECRET_KEY
+        generateValue: true
+      - key: GEMINI_ENABLED
+        value: "true"
+      - key: LOG_LEVEL
+        value: info
+      - key: DATABASE_PATH
+        value: /opt/render/project/src/data/omnibridge.db
+    disk:
+      name: omnibridge-data
+      mountPath: /opt/render/project/src/data
+      sizeGB: 1
