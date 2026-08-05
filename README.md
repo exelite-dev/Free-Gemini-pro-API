@@ -305,3 +305,9 @@ MIT License — see [LICENSE](LICENSE) for details.
 ## 📢 Community
 
 - **Telegram:** [@Config_Vortex55](https://t.me/Config_Vortex55) — updates, tips, and support
+
+<br><br>
+<div align="center">
+<img src="docs/art.jpg" alt="OmniBridge Art" width="500">
+</div>
+
