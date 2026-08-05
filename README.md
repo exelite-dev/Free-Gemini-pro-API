@@ -15,6 +15,10 @@
 
 **A high-performance, self-hosted AI proxy server that exposes Google Gemini (via web session cookies) as a fully OpenAI-compatible and Anthropic-compatible API — complete with a beautiful Persian admin dashboard.**
 
+<br>
+<img src="docs/dashboard.jpg" alt="Admin Dashboard" width="800">
+<br><br>
+
 **📢 Official Telegram Channel:** [@Config_Vortex55](https://t.me/Config_Vortex55)
 
 [Features](#-features) · [Quick Start](#-quick-start) · [API Reference](#-api-reference) · [Admin Dashboard](#️-admin-dashboard) · [Deploy](#-one-click-deploy)
