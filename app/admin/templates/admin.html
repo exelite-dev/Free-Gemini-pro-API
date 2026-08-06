@@ -315,6 +315,18 @@
         <p>ساخت کلید اختصاصی جهت استفاده در نرم‌افزارهای Cursor، NextChat، پایتون و...</p>
       </div>
 
+      <div class="card" style="margin-bottom:1.5rem; background:rgba(99,102,241,0.05); border:1px solid rgba(99,102,241,0.2)">
+        <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem">
+          <svg width="20" height="20" fill="none" stroke="var(--accent-primary)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+          <h3 style="margin:0; color:var(--accent-primary); font-size:1rem;">آدرس سرور شما (Base URL برای تنظیمات)</h3>
+        </div>
+        <p style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:0.75rem;">این آدرس را کپی کرده و دقیقاً در قسمت <strong>Base URL</strong> یا <strong>OpenAI Endpoint</strong> نرم‌افزار خود قرار دهید:</p>
+        <div style="display:flex; align-items:center; gap:0.75rem">
+          <code id="dynamic-base-url" class="mono ltr" style="font-size:1.05rem; color:var(--text-primary); flex:1; background:var(--bg-deep); padding:0.5rem 0.8rem; border-radius:var(--radius-sm)">در حال محاسبه...</code>
+          <button class="btn btn-secondary btn-sm" onclick="copyBaseUrl()">کپی آدرس</button>
+        </div>
+      </div>
+
       <div class="card" style="margin-bottom:1.5rem">
         <div class="card-header">
           <h3>ساخت کلید API جدید</h3>
@@ -439,8 +451,8 @@
       <div class="grid grid-3" style="gap:1.25rem;margin-bottom:1.5rem">
         <div class="card" style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.3)">
           <div style="font-size:0.8rem;color:var(--accent-primary);font-weight:700;margin-bottom:0.4rem">1️⃣ Base URL (آدرس اختصاصی سرور)</div>
-          <code class="mono ltr" style="display:block;background:var(--bg-deep);padding:0.6rem 0.8rem;border-radius:6px;font-size:0.95rem;color:#fff;margin-bottom:0.75rem">http://localhost:8080/v1</code>
-          <button class="btn btn-primary btn-sm" style="width:100%" onclick="navigator.clipboard.writeText('http://localhost:8080/v1');toast('آدرس Base URL کپی شد!','success')">کپی Base URL</button>
+          <code id="dynamic-base-url-integration" class="mono ltr" style="display:block;background:var(--bg-deep);padding:0.6rem 0.8rem;border-radius:6px;font-size:0.95rem;color:#fff;margin-bottom:0.75rem">در حال محاسبه...</code>
+          <button class="btn btn-primary btn-sm" style="width:100%" onclick="copyIntegrationBaseUrl()">کپی Base URL</button>
         </div>
 
         <div class="card" style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.3)">
@@ -1047,11 +1059,14 @@ async function loadKeys() {
     }
     const rows = keys.filter(k=>!k.revoked).map(k => `<tr>
       <td>${k.label||'-'}</td>
-      <td><span class="mono ltr">${maskKey(k.key_value)}</span></td>
+      <td><span class="mono ltr" style="cursor:pointer;" onclick="copySpecificKey('${k.key_value}')" title="برای کپی کلیک کنید">${maskKey(k.key_value)}</span></td>
       <td>${formatDate(k.created_at)}</td>
       <td>${formatDate(k.last_used)}</td>
       <td><span class="badge badge-green">فعال</span></td>
-      <td><button class="btn btn-danger btn-sm" onclick="revokeKey(${k.id})">لغو کلید</button></td>
+      <td>
+        <button class="btn btn-secondary btn-sm" style="margin-left:4px" onclick="copySpecificKey('${k.key_value}')">کپی</button>
+        <button class="btn btn-danger btn-sm" onclick="revokeKey(${k.id})">لغو</button>
+      </td>
     </tr>`);
     $('keys-tbody').innerHTML = rows.join('')||`<tr><td colspan="6" style="text-align:center;color:var(--text-muted)">هیچ کلید فعالی وجود ندارد.</td></tr>`;
   } catch(e) { console.error(e); }
@@ -1073,6 +1088,34 @@ async function createKey() {
 function copyKey() {
   navigator.clipboard.writeText($('new-key-value').textContent);
   toast('کلید API کپی شد!', 'success');
+}
+
+function copyBaseUrl() {
+  const el = document.getElementById('dynamic-base-url');
+  if(!el) return;
+  navigator.clipboard.writeText(el.textContent).then(() => {
+    toast('آدرس سرور با موفقیت کپی شد', 'success');
+  }).catch(() => {
+    toast('خطا در کپی آدرس', 'error');
+  });
+}
+
+function copySpecificKey(val) {
+  navigator.clipboard.writeText(val).then(() => {
+    toast('کلید با موفقیت کپی شد', 'success');
+  }).catch(() => {
+    toast('خطا در کپی کلید', 'error');
+  });
+}
+
+function copyIntegrationBaseUrl() {
+  const el = document.getElementById('dynamic-base-url-integration');
+  if(!el) return;
+  navigator.clipboard.writeText(el.textContent).then(() => {
+    toast('آدرس Base URL کپی شد!', 'success');
+  }).catch(() => {
+    toast('خطا در کپی آدرس', 'error');
+  });
 }
 
 async function revokeKey(id) {
@@ -1240,6 +1283,14 @@ async function sendChat() {
 
 // Init & Auto Refresh
 window.addEventListener('DOMContentLoaded', () => {
+  // Set dynamic Base URL
+  const baseUrl = window.location.origin + '/v1';
+  const baseUrlEl = document.getElementById('dynamic-base-url');
+  if(baseUrlEl) baseUrlEl.textContent = baseUrl;
+  
+  const intBaseUrlEl = document.getElementById('dynamic-base-url-integration');
+  if(intBaseUrlEl) intBaseUrlEl.textContent = baseUrl;
+
   checkAuth();
 
   // Enter key triggers login
