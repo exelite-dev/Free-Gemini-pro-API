@@ -6,8 +6,9 @@ Tables: api_keys, accounts, provider_config, request_metrics
 from __future__ import annotations
 
 import json
-import secrets
+import logging
 import time
+import os
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, AsyncGenerator, Dict, List, Optional
@@ -111,6 +112,41 @@ async def init_db() -> None:
                         "INSERT INTO api_keys (key_value, label, created_at) VALUES (?, ?, ?)",
                         (key_val, label, now),
                     )
+
+        # Seed from Environment Variables (for ephemeral deployments like Render)
+        gemini_env = os.environ.get("GEMINI_ACCOUNTS")
+        if gemini_env:
+            try:
+                env_accounts = json.loads(gemini_env)
+                for acct in env_accounts:
+                    creds_json = json.dumps(acct, ensure_ascii=False)
+                    label = acct.get("label", "Env Account")
+                    # Check if exists to avoid duplicates
+                    async with db.execute("SELECT id FROM accounts WHERE provider='gemini' AND credentials=?", (creds_json,)) as cur:
+                        if not await cur.fetchone():
+                            await db.execute(
+                                "INSERT INTO accounts (provider, label, credentials, created_at) VALUES (?, ?, ?, ?)",
+                                ("gemini", label, creds_json, time.time())
+                            )
+            except Exception as e:
+                logger.error("Failed to parse GEMINI_ACCOUNTS env var: %s", e)
+
+        api_keys_env = os.environ.get("OMNIBRIDGE_API_KEYS")
+        if api_keys_env:
+            try:
+                if api_keys_env.startswith("["):
+                    keys = json.loads(api_keys_env)
+                else:
+                    keys = [k.strip() for k in api_keys_env.split(",") if k.strip()]
+                
+                for k in keys:
+                    await db.execute(
+                        "INSERT OR IGNORE INTO api_keys (key_value, label, created_at) VALUES (?, ?, ?)",
+                        (k, "Env Key", time.time())
+                    )
+            except Exception as e:
+                logger.error("Failed to parse OMNIBRIDGE_API_KEYS env var: %s", e)
+
         await db.commit()
 
 

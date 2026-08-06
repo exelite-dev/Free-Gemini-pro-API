@@ -27,7 +27,7 @@ class RateLimitError(ProviderError):
 class AuthError(ProviderError):
     """Authentication/cookie/token failure."""
     def __init__(self, message: str = "Authentication failed"):
-        super().__init__(message, status_code=401, retry=False)
+        super().__init__(message, status_code=401, retry=True)
 
 
 class AbstractProvider(abc.ABC):
