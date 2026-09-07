@@ -682,15 +682,21 @@
 const $ = id => document.getElementById(id);
 
 function toast(msg, type='info') {
+  let container = document.getElementById('toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toast-container';
+    document.body.appendChild(container);
+  }
   const t = document.createElement('div');
   t.className = `toast toast-${type}`;
   t.textContent = msg;
-  document.body.appendChild(t);
+  container.appendChild(t);
   setTimeout(() => t.classList.add('show'), 10);
   setTimeout(() => {
     t.classList.remove('show');
-    setTimeout(() => t.remove(), 300);
-  }, 3000);
+    setTimeout(() => t.remove(), 350);
+  }, 4000);
 }
 
 function formatDate(ts) {
@@ -1009,7 +1015,7 @@ async function loadAccounts() {
         <td>${a.fail_count||0}</td>
         <td>${formatDate(a.last_used)}</td>
         <td style="display:flex;gap:0.4rem;flex-wrap:wrap">
-          <button class="btn btn-success btn-sm" onclick="testAccount(${a.id})">تست اتصال</button>
+          <button class="btn btn-success btn-sm" onclick="testAccount(${a.id}, this)">تست اتصال</button>
           <button class="btn btn-secondary btn-sm" onclick="editAccount(${a.id})">ویرایش</button>
           <button class="btn btn-secondary btn-sm" onclick="toggleAccount(${a.id},${!a.enabled})">${a.enabled?'غیرفعال':'فعال‌سازی'}</button>
           <button class="btn btn-danger btn-sm" onclick="deleteAccount(${a.id})">حذف</button>
@@ -1034,12 +1040,29 @@ async function loadAccounts() {
   } catch(e) { console.error(e); }
 }
 
-async function testAccount(id) {
-  toast('در حال تست اتصال...', 'info');
-  const res = await apiCall('POST', `/admin/api/accounts/${id}/test`);
-  const d = await res.json();
-  if (d.success) toast('✅ اتصال با موفقیت برقرار شد!', 'success');
-  else toast(`❌ تست اتصال ناموفق: ${d.error||'خطای نامشخص'}`, 'error');
+async function testAccount(id, btn) {
+  const origText = btn ? btn.textContent : '';
+  if (btn) {
+    btn.disabled = true;
+    btn.textContent = '⏳ در حال تست...';
+  }
+  toast('در حال تست اعتبار و اتصال به ارائه‌دهنده...', 'info');
+  try {
+    const res = await apiCall('POST', `/admin/api/accounts/${id}/test`);
+    const d = await res.json();
+    if (d.success) {
+      toast('✅ اتصال با موفقیت برقرار شد و اکانت فعال است!', 'success');
+    } else {
+      toast(`❌ تست اتصال ناموفق: ${d.error || 'خطای نامشخص'}`, 'error');
+    }
+  } catch(e) {
+    toast(`❌ خطای شبکه: ${e}`, 'error');
+  } finally {
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = origText;
+    }
+  }
 }
 
 async function toggleAccount(id, enabled) {
