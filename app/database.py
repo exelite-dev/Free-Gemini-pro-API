@@ -7,6 +7,7 @@ from __future__ import annotations
 
 import json
 import logging
+import secrets
 import time
 import os
 from contextlib import asynccontextmanager
@@ -17,6 +18,7 @@ import aiosqlite
 
 from app.config import settings
 
+logger = logging.getLogger("omnibridge.database")
 _DB_PATH: str = settings.database_path
 
 
@@ -90,6 +92,8 @@ async def init_db() -> None:
         # Seed provider config rows if missing
         for provider, enabled in [
             ("gemini", int(settings.gemini_enabled)),
+            ("deepseek", int(settings.deepseek_enabled)),
+            ("chatgpt", int(settings.chatgpt_enabled)),
         ]:
             await db.execute(
                 """
@@ -98,9 +102,9 @@ async def init_db() -> None:
                 """,
                 (provider, enabled, time.time()),
             )
-        # Delete non-gemini provider accounts and config
-        await db.execute("DELETE FROM accounts WHERE provider != 'gemini'")
-        await db.execute("DELETE FROM provider_config WHERE provider != 'gemini'")
+        # Clean up legacy unsupported providers if any
+        await db.execute("DELETE FROM accounts WHERE provider NOT IN ('gemini', 'deepseek', 'chatgpt')")
+        await db.execute("DELETE FROM provider_config WHERE provider NOT IN ('gemini', 'deepseek', 'chatgpt')")
 
         # Seed default API keys if none exist
         async with db.execute("SELECT COUNT(*) as cnt FROM api_keys") as cur:
@@ -113,23 +117,51 @@ async def init_db() -> None:
                         (key_val, label, now),
                     )
 
-        # Seed from Environment Variables (for ephemeral deployments like Render)
-        gemini_env = os.environ.get("GEMINI_ACCOUNTS")
-        if gemini_env:
-            try:
-                env_accounts = json.loads(gemini_env)
-                for acct in env_accounts:
-                    creds_json = json.dumps(acct, ensure_ascii=False)
-                    label = acct.get("label", "Env Account")
-                    # Check if exists to avoid duplicates
-                    async with db.execute("SELECT id FROM accounts WHERE provider='gemini' AND credentials=?", (creds_json,)) as cur:
-                        if not await cur.fetchone():
-                            await db.execute(
-                                "INSERT INTO accounts (provider, label, credentials, created_at) VALUES (?, ?, ?, ?)",
-                                ("gemini", label, creds_json, time.time())
-                            )
-            except Exception as e:
-                logger.error("Failed to parse GEMINI_ACCOUNTS env var: %s", e)
+        # Seed from Environment Variables (for ephemeral deployments like Render/Docker)
+        for env_var, p_name in [
+            ("GEMINI_ACCOUNTS", "gemini"),
+            ("DEEPSEEK_ACCOUNTS", "deepseek"),
+            ("CHATGPT_ACCOUNTS", "chatgpt"),
+        ]:
+            val = os.environ.get(env_var)
+            if val:
+                try:
+                    env_accounts = json.loads(val)
+                    for acct in env_accounts:
+                        creds_json = json.dumps(acct, ensure_ascii=False)
+                        label = acct.get("label", f"Env {p_name.capitalize()} Account")
+                        async with db.execute(
+                            "SELECT id FROM accounts WHERE provider=? AND credentials=?",
+                            (p_name, creds_json),
+                        ) as cur:
+                            if not await cur.fetchone():
+                                await db.execute(
+                                    "INSERT INTO accounts (provider, label, credentials, created_at) VALUES (?, ?, ?, ?)",
+                                    (p_name, label, creds_json, time.time()),
+                                )
+                except Exception as e:
+                    logger.error("Failed to parse %s env var: %s", env_var, e)
+
+        # Single token env shortcuts
+        if os.environ.get("DEEPSEEK_USER_TOKEN"):
+            ds_token = os.environ["DEEPSEEK_USER_TOKEN"].strip()
+            ds_creds = json.dumps({"userToken": ds_token})
+            async with db.execute("SELECT id FROM accounts WHERE provider='deepseek' AND credentials=?", (ds_creds,)) as cur:
+                if not await cur.fetchone():
+                    await db.execute(
+                        "INSERT INTO accounts (provider, label, credentials, created_at) VALUES (?, ?, ?, ?)",
+                        ("deepseek", "Env DeepSeek Token", ds_creds, time.time()),
+                    )
+
+        if os.environ.get("CHATGPT_SESSION_TOKEN"):
+            cg_token = os.environ["CHATGPT_SESSION_TOKEN"].strip()
+            cg_creds = json.dumps({"session_token": cg_token})
+            async with db.execute("SELECT id FROM accounts WHERE provider='chatgpt' AND credentials=?", (cg_creds,)) as cur:
+                if not await cur.fetchone():
+                    await db.execute(
+                        "INSERT INTO accounts (provider, label, credentials, created_at) VALUES (?, ?, ?, ?)",
+                        ("chatgpt", "Env ChatGPT Token", cg_creds, time.time()),
+                    )
 
         api_keys_env = os.environ.get("OMNIBRIDGE_API_KEYS")
         if api_keys_env:
@@ -155,7 +187,7 @@ async def init_db() -> None:
 # ─────────────────────────────────────────────────────────────────────────────
 
 async def is_provider_enabled(provider: str) -> bool:
-    if provider != "gemini":
+    if provider not in ("gemini", "deepseek", "chatgpt"):
         return False
     async with get_db() as db:
         async with db.execute(
@@ -185,7 +217,7 @@ async def get_all_provider_states() -> Dict[str, bool]:
         async with db.execute("SELECT provider, enabled FROM provider_config") as cur:
             rows = await cur.fetchall()
             db_states = {row["provider"]: bool(row["enabled"]) for row in rows}
-            all_providers = ["gemini"]
+            all_providers = ["gemini", "deepseek", "chatgpt"]
             return {p: db_states.get(p, True) for p in all_providers}
 
 
@@ -296,8 +328,10 @@ async def list_accounts(provider: Optional[str] = None) -> List[Dict[str, Any]]:
         return result
 
 
-async def get_available_account(provider: str) -> Optional[Dict[str, Any]]:
-    """Get a random enabled account for the provider that is not in cooldown."""
+async def get_available_account(
+    provider: str, exclude_ids: Optional[List[int]] = None
+) -> Optional[Dict[str, Any]]:
+    """Get a random enabled account for the provider that is not in cooldown and not in exclude_ids."""
     now = time.time()
     async with get_db() as db:
         # Try to add the column if it doesn't exist yet (for smooth upgrade)
@@ -305,17 +339,23 @@ async def get_available_account(provider: str) -> Optional[Dict[str, Any]]:
             await db.execute("ALTER TABLE accounts ADD COLUMN cooldown_until REAL DEFAULT 0")
         except Exception:
             pass
-            
-        async with db.execute(
-            """
+
+        query = """
             SELECT * FROM accounts 
             WHERE provider = ? 
               AND enabled = 1 
               AND (cooldown_until IS NULL OR cooldown_until <= ?)
-            ORDER BY RANDOM() LIMIT 1
-            """,
-            (provider, now)
-        ) as cur:
+        """
+        params: List[Any] = [provider, now]
+
+        if exclude_ids:
+            placeholders = ",".join("?" for _ in exclude_ids)
+            query += f" AND id NOT IN ({placeholders})"
+            params.extend(exclude_ids)
+
+        query += " ORDER BY RANDOM() LIMIT 1"
+
+        async with db.execute(query, params) as cur:
             row = await cur.fetchone()
             if row:
                 d = dict(row)

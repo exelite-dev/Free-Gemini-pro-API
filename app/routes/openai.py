@@ -170,7 +170,6 @@ async def _openai_sse_generator(
     provider_name: str,
 ) -> AsyncGenerator[str, None]:
     """Yield OpenAI-format SSE chunks."""
-    created = int(time.time())
     # Send role chunk first
     first_chunk = ChatCompletionChunk(
         id=request_id,
@@ -183,7 +182,7 @@ async def _openai_sse_generator(
             )
         ],
     )
-    yield f"data: {first_chunk.model_dump_json()}\n\n"
+    yield f"data: {first_chunk.model_dump_json(exclude_none=True)}\n\n"
 
     success = True
     
@@ -191,15 +190,19 @@ async def _openai_sse_generator(
     if unified.tools:
         buffer = ""
         try:
-            logger.info(f"--- UNIFIED MESSAGES TO GEMINI ---")
-            for m in unified.messages:
-                logger.info(f"ROLE: {m.role} | CONTENT: {m.text[:300]}...")
-            
-            async for text_chunk in pool.stream_chat(unified):
-                buffer += text_chunk
-                
-            logger.info(f"--- GEMINI RAW BUFFER ---")
-            logger.info(buffer)
+            async for chunk_item in pool.stream_chat(unified):
+                if isinstance(chunk_item, dict) and "reasoning_content" in chunk_item:
+                    # Stream reasoning content immediately
+                    r_chunk = ChatCompletionChunk(
+                        id=request_id,
+                        model=model_id,
+                        choices=[StreamChoice(index=0, delta=DeltaMessage(reasoning_content=chunk_item["reasoning_content"]))],
+                    )
+                    yield f"data: {r_chunk.model_dump_json(exclude_none=True)}\n\n"
+                elif isinstance(chunk_item, str):
+                    buffer += chunk_item
+                elif isinstance(chunk_item, dict) and "content" in chunk_item:
+                    buffer += chunk_item["content"]
             
             # Post-process buffer
             parsed_tools = _parse_emulated_tool_call(buffer)
@@ -233,6 +236,9 @@ async def _openai_sse_generator(
                 )
                 yield f"data: {stop_chunk.model_dump_json(exclude_none=True)}\n\n"
                 yield "data: [DONE]\n\n"
+                
+                latency_ms = (time.monotonic() - start_ts) * 1000
+                await record_metric(provider_name, model_id, True, latency_ms)
                 return
             else:
                 # Not a tool call, yield buffered text
@@ -243,25 +249,42 @@ async def _openai_sse_generator(
                 )
                 yield f"data: {chunk.model_dump_json(exclude_none=True)}\n\n"
         
-        except (RateLimitError, AuthError, ProviderError) as e:
-            success = False
+        except (RateLimitError, AuthError, ProviderError, Exception) as e:
             error_chunk = {"error": {"message": str(e), "type": "provider_error"}}
             yield f"data: {json.dumps(error_chunk)}\n\n"
+            latency_ms = (time.monotonic() - start_ts) * 1000
+            await record_metric(provider_name, model_id, False, latency_ms)
+            return
             
     else:
         # Standard streaming
         try:
-            async for text_chunk in pool.stream_chat(unified):
-                chunk = ChatCompletionChunk(
-                    id=request_id,
-                    model=model_id,
-                    choices=[StreamChoice(index=0, delta=DeltaMessage(content=text_chunk))]
-                )
+            async for chunk_item in pool.stream_chat(unified):
+                if isinstance(chunk_item, dict) and "reasoning_content" in chunk_item:
+                    chunk = ChatCompletionChunk(
+                        id=request_id,
+                        model=model_id,
+                        choices=[StreamChoice(index=0, delta=DeltaMessage(reasoning_content=chunk_item["reasoning_content"]))]
+                    )
+                elif isinstance(chunk_item, dict) and "content" in chunk_item:
+                    chunk = ChatCompletionChunk(
+                        id=request_id,
+                        model=model_id,
+                        choices=[StreamChoice(index=0, delta=DeltaMessage(content=chunk_item["content"]))]
+                    )
+                else:
+                    chunk = ChatCompletionChunk(
+                        id=request_id,
+                        model=model_id,
+                        choices=[StreamChoice(index=0, delta=DeltaMessage(content=str(chunk_item)))]
+                    )
                 yield f"data: {chunk.model_dump_json(exclude_none=True)}\n\n"
-        except (RateLimitError, AuthError, ProviderError) as e:
-            success = False
+        except (RateLimitError, AuthError, ProviderError, Exception) as e:
             error_chunk = {"error": {"message": str(e), "type": "provider_error"}}
             yield f"data: {json.dumps(error_chunk)}\n\n"
+            latency_ms = (time.monotonic() - start_ts) * 1000
+            await record_metric(provider_name, model_id, False, latency_ms)
+            return
 
     # Final stop chunk
     stop_chunk = ChatCompletionChunk(
@@ -279,4 +302,4 @@ async def _openai_sse_generator(
     yield "data: [DONE]\n\n"
 
     latency_ms = (time.monotonic() - start_ts) * 1000
-    await record_metric(provider_name, model_id, success, latency_ms)
+    await record_metric(provider_name, model_id, True, latency_ms)

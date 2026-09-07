@@ -40,15 +40,8 @@ async def require_api_key(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    if not key.startswith("sk-") and not key.startswith("omni-"):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid API key format.",
-            headers={"WWW-Authenticate": "Bearer"},
-        )
-
     valid = await validate_api_key(key)
-    if not valid and key not in ("sk-test", "sk-omni-default"):
+    if not valid:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid or revoked API key.",

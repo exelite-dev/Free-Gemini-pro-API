@@ -1,0 +1,3 @@
+"""
+OmniBridge – ChatGPT Provider Package
+"""

@@ -19,9 +19,3 @@ services:
         value: "true"
       - key: LOG_LEVEL
         value: info
-      - key: DATABASE_PATH
-        value: /opt/render/project/src/data/omnibridge.db
-    disk:
-      name: omnibridge-data
-      mountPath: /opt/render/project/src/data
-      sizeGB: 1

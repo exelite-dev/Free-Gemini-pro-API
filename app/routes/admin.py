@@ -104,7 +104,7 @@ class ProviderToggle(BaseModel):
 @router.post("/admin/api/providers/{provider}/toggle")
 async def toggle_provider(provider: str, body: ProviderToggle, request: Request):
     _require_admin(request)
-    if provider != "gemini":
+    if provider not in ("gemini", "deepseek", "chatgpt"):
         raise HTTPException(status_code=400, detail="Unknown provider.")
     await set_provider_enabled(provider, body.enabled)
     return {"provider": provider, "enabled": body.enabled}
@@ -142,7 +142,7 @@ async def get_accounts(request: Request, provider: Optional[str] = None):
 @router.post("/admin/api/accounts")
 async def add_account_route(body: AddAccountRequest, request: Request):
     _require_admin(request)
-    if body.provider != "gemini":
+    if body.provider not in ("gemini", "deepseek", "chatgpt"):
         raise HTTPException(status_code=400, detail="Unknown provider.")
     acct_id = await add_account(body.provider, body.label, body.credentials)
     return {"id": acct_id, "provider": body.provider, "label": body.label}
@@ -191,7 +191,7 @@ async def test_account(account_id: int, request: Request):
     try:
         valid = await pool.engine.validate(acct["credentials"])
         if not valid:
-            return {"success": False, "account_id": account_id, "error": "توکن یا کوکی‌های این اکانت وارد نشده یا انقضا یافته است."}
+            return {"success": False, "account_id": account_id, "error": "توکن یا کوکی‌های این اکانت نامعتبر است یا انقضا یافته است."}
         return {"success": True, "account_id": account_id}
     except ProviderError as e:
         return {"success": False, "account_id": account_id, "error": str(e)}
@@ -233,9 +233,10 @@ async def admin_models(request: Request):
     """Return available models for the playground (uses admin session, no API key)."""
     _require_admin(request)
     provider_states = await get_all_provider_states()
-    gemini_on = provider_states.get("gemini", True)
     models = settings.get_all_models(
-        gemini_enabled=gemini_on,
+        gemini_enabled=provider_states.get("gemini", True),
+        deepseek_enabled=provider_states.get("deepseek", True),
+        chatgpt_enabled=provider_states.get("chatgpt", True),
     )
     return [{"id": m.id, "display_name": m.display_name, "provider": m.provider} for m in models]
 

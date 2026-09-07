@@ -62,7 +62,7 @@ source venv/bin/activate  # Windows: venv\Scripts\activate
 pip install -r requirements.txt
 
 # Run in dev mode
-uvicorn app.main:app --host 127.0.0.1 --port 8080 --reload
+uvicorn app.main:app --host 127.0.0.1 --port 8000 --reload
 
 # Run tests
 python -m pytest tests/ -v

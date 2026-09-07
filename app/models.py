@@ -47,6 +47,7 @@ class ToolCall(BaseModel):
 class ChatMessage(BaseModel):
     role: Literal["system", "user", "assistant", "tool", "function"]
     content: Union[str, List[ContentPart], None] = None
+    reasoning_content: Optional[str] = None
     name: Optional[str] = None
     tool_calls: Optional[List[ToolCall]] = None
     tool_call_id: Optional[str] = None
@@ -132,6 +133,7 @@ class DeltaToolCall(BaseModel):
 class DeltaMessage(BaseModel):
     role: Optional[str] = None
     content: Optional[str] = None
+    reasoning_content: Optional[str] = None
     tool_calls: Optional[List[DeltaToolCall]] = None
 
 

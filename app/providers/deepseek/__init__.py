@@ -1,0 +1,3 @@
+"""
+OmniBridge – DeepSeek Provider Package
+"""

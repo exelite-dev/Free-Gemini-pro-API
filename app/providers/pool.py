@@ -40,22 +40,22 @@ class AccountPool:
         self._index = 0
         self._backoff: Dict[int, float] = {}   # account_id → available-after timestamp
 
-    async def _pick_account(self) -> Optional[Dict[str, Any]]:
-        """Round-robin pick from the database, skipping accounts in cooldown."""
-        acct = await get_available_account(self.provider_name)
+    async def _pick_account(self, exclude_ids: Optional[set] = None) -> Optional[Dict[str, Any]]:
+        """Round-robin/random pick from the database, skipping accounts in cooldown or already tried."""
+        ex_list = list(exclude_ids) if exclude_ids else None
+        acct = await get_available_account(self.provider_name, exclude_ids=ex_list)
         if not acct:
-            logger.warning("No available accounts for %s (all in cooldown or disabled).", self.provider_name)
-            await asyncio.sleep(1)
+            logger.warning("No available accounts for %s (all in cooldown, disabled, or already tried).", self.provider_name)
         return acct
 
     async def chat(self, request: UnifiedRequest) -> str:
         """Non-streaming chat with automatic failover."""
         last_error: Optional[ProviderError] = None
-        tried = set()
+        tried: set[int] = set()
 
         # Try up to _MAX_FAIL_COUNT times
         for _ in range(_MAX_FAIL_COUNT):
-            acct = await self._pick_account()
+            acct = await self._pick_account(exclude_ids=tried)
             if acct is None:
                 if not tried:
                     # If absolutely no accounts exist, use guest fallback
@@ -63,8 +63,6 @@ class AccountPool:
                 else:
                     break
 
-            if acct["id"] in tried:
-                break
             tried.add(acct["id"])
 
             try:
@@ -97,25 +95,25 @@ class AccountPool:
     ) -> AsyncGenerator[str, None]:
         """Streaming chat with automatic failover."""
         last_error: Optional[ProviderError] = None
-        tried = set()
+        tried: set[int] = set()
 
         # Try up to _MAX_FAIL_COUNT times
         for _ in range(_MAX_FAIL_COUNT):
-            acct = await self._pick_account()
+            acct = await self._pick_account(exclude_ids=tried)
             if acct is None:
                 if not tried:
                     acct = {"id": 0, "label": "Guest Account", "credentials": {}, "enabled": True}
                 else:
                     break
 
-            if acct["id"] in tried:
-                break
             tried.add(acct["id"])
 
+            has_yielded = False
             try:
                 async for chunk in self.engine.stream_chat(
                     request, acct["id"], acct["credentials"]
                 ):
+                    has_yielded = True
                     yield chunk
                 if acct["id"] != 0:
                     await record_account_use(acct["id"], failed=False)
@@ -125,13 +123,15 @@ class AccountPool:
                 if acct["id"] != 0:
                     await set_account_cooldown(acct["id"], minutes=1)
                     await record_account_use(acct["id"], failed=True)
+                if has_yielded:
+                    raise
                 last_error = e
             except ProviderError as e:
-                if not e.retry:
-                    raise
-                logger.warning("Account %d error: %s. Trying next.", acct["id"], e)
                 if acct["id"] != 0:
                     await record_account_use(acct["id"], failed=True)
+                if not e.retry or has_yielded:
+                    raise
+                logger.warning("Account %d error: %s. Trying next.", acct["id"], e)
                 last_error = e
 
         if last_error:

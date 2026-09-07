@@ -38,16 +38,27 @@ async def lifespan(app: FastAPI):
     logger.info("OmniBridge starting up...")
     await init_db()
 
-    provider_states = await get_all_provider_states()
-
     # Register Gemini engine
-    if provider_states.get("gemini", settings.gemini_enabled):
-        from app.providers.gemini.engine import GeminiEngine
-        gemini_cfg = settings.get_gemini_config()
-        register_provider("gemini", GeminiEngine(config=gemini_cfg))
-        logger.info("Gemini provider registered.")
+    from app.providers.gemini.engine import GeminiEngine
+    gemini_cfg = settings.get_gemini_config()
+    register_provider("gemini", GeminiEngine(config=gemini_cfg))
+    logger.info("Gemini provider registered.")
 
-        # Start cookie refresh background task
+    # Register DeepSeek engine
+    from app.providers.deepseek.engine import DeepSeekEngine
+    deepseek_cfg = settings.get_deepseek_config()
+    register_provider("deepseek", DeepSeekEngine(config=deepseek_cfg))
+    logger.info("DeepSeek provider registered.")
+
+    # Register ChatGPT engine
+    from app.providers.chatgpt.engine import ChatGPTEngine
+    chatgpt_cfg = settings.get_chatgpt_config()
+    register_provider("chatgpt", ChatGPTEngine(config=chatgpt_cfg))
+    logger.info("ChatGPT provider registered.")
+
+    # Start cookie refresh background task for Gemini
+    provider_states = await get_all_provider_states()
+    if provider_states.get("gemini", settings.gemini_enabled):
         refresh_interval = gemini_cfg.get("cookie_refresh_interval", 3300)
         task = asyncio.create_task(cookie_refresh_loop(interval=refresh_interval))
         _bg_tasks.append(task)

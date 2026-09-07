@@ -3,7 +3,7 @@
 
 server:
   host: "0.0.0.0"
-  port: 8080
+  port: 8000
   log_level: "info"
 
 database:
@@ -60,4 +60,44 @@ providers:
       - id: "gemini-1.5-flash"
         display_name: "Gemini 1.5 Flash"
         context_window: 1000000
+        supports_vision: true
+
+  deepseek:
+    enabled: true
+    request_timeout: 90
+    max_retries: 3
+    models:
+      - id: "deepseek-chat"
+        display_name: "DeepSeek Chat (V3)"
+        context_window: 64000
+        supports_vision: false
+      - id: "deepseek-reasoner"
+        display_name: "DeepSeek Reasoner (R1 - Thinking)"
+        context_window: 64000
+        supports_vision: false
+
+  chatgpt:
+    enabled: true
+    request_timeout: 90
+    max_retries: 3
+    models:
+      - id: "gpt-4o"
+        display_name: "ChatGPT GPT-4o"
+        context_window: 128000
+        supports_vision: true
+      - id: "gpt-4o-mini"
+        display_name: "ChatGPT GPT-4o-mini"
+        context_window: 128000
+        supports_vision: true
+      - id: "o1-mini"
+        display_name: "ChatGPT o1-mini (Reasoning)"
+        context_window: 128000
+        supports_vision: false
+      - id: "o3-mini"
+        display_name: "ChatGPT o3-mini (Reasoning)"
+        context_window: 128000
+        supports_vision: false
+      - id: "chatgpt-auto"
+        display_name: "ChatGPT Auto"
+        context_window: 128000
         supports_vision: true

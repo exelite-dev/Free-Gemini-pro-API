@@ -17,6 +17,7 @@ import base64
 import httpx
 from curl_cffi.requests import AsyncSession
 
+from app.config import settings
 from app.database import update_account_credentials
 from app.models import UnifiedMessage, UnifiedRequest
 from app.providers.base import AbstractProvider, AuthError, ProviderError, RateLimitError
@@ -160,7 +161,8 @@ def _parse_stream_chunks(raw: str) -> Optional[str]:
 
     try:
         # Find all wrb.fr chunks and extract inner JSON strings
-        inner_jsons = re.findall(r'\["wrb\.fr",null,"((?:[^"\\]|\\.)+?)"', raw)
+        # Handles both unescaped and escaped variations
+        inner_jsons = re.findall(r'\["wrb\.fr",\s*null,\s*"((?:[^"\\]|\\.)*)"', raw)
         for ij in inner_jsons:
             try:
                 inner_str = json.loads(f'"{ij}"')  # unescape the string
@@ -185,6 +187,8 @@ def _parse_stream_chunks(raw: str) -> Optional[str]:
         pass
 
     if best_text:
+        # Strip out <FollowUp> chips from Web UI
+        best_text = re.sub(r'<FollowUp[^>]*/>', '', best_text)
         return best_text
 
     # Fallback: find text near rc_ candidate ids in raw string
@@ -193,7 +197,7 @@ def _parse_stream_chunks(raw: str) -> Optional[str]:
         for m in rc_matches:
             try:
                 txt = json.loads(m.group(1))
-                if isinstance(txt, str) and len(txt) > best_len and len(txt) > 3:
+                if isinstance(txt, str) and len(txt) > best_len and len(txt) > 0:
                     best_text = txt
                     best_len = len(txt)
             except Exception:
@@ -202,7 +206,6 @@ def _parse_stream_chunks(raw: str) -> Optional[str]:
         pass
 
     if best_text:
-        # Strip out <FollowUp> chips from Web UI
         best_text = re.sub(r'<FollowUp[^>]*/>', '', best_text)
 
     return best_text
@@ -266,7 +269,7 @@ class GeminiEngine(AbstractProvider):
         if not at_token:
             raise AuthError(
                 "کوکی‌های اکانت Google Gemini منقضی شده‌اند.\n"
-                "لطفاً وارد پنل مدیریت (http://localhost:8080/admin) ← مدیریت اکانت‌ها شده و کوکی جدید __Secure-1PSIDTS را کپی و ویرایش کنید."
+                f"لطفاً وارد پنل مدیریت (http://localhost:{settings.port}/admin) ← مدیریت اکانت‌ها شده و کوکی جدید __Secure-1PSIDTS را کپی و ویرایش کنید."
             )
         return at_token, bl_token, session_id
 
@@ -514,7 +517,7 @@ class GeminiEngine(AbstractProvider):
                     if text and len(text) > last_sent_len:
                         new_part = text[last_sent_len:]
                         last_sent_len = len(text)
-                        if new_part.strip():
+                        if new_part:
                             yield new_part
 
                 if last_sent_len == 0:

@@ -1,3 +1,13 @@
+---
+title: OmniBridge AI Proxy
+emoji: ⚡
+colorFrom: indigo
+colorTo: purple
+sdk: docker
+app_port: 8000
+pinned: false
+---
+
 # OmniBridge
 
 <div align="center">
@@ -15,7 +25,7 @@
 [![OpenAI Compatible](https://img.shields.io/badge/API-OpenAI%20Compatible-412991?style=flat-square)](https://platform.openai.com/docs/api-reference)
 [![Anthropic Compatible](https://img.shields.io/badge/API-Anthropic%20Compatible-D97706?style=flat-square)](https://docs.anthropic.com)
 
-**A high-performance, self-hosted AI proxy server that exposes Google Gemini (via web session cookies) as a fully OpenAI-compatible and Anthropic-compatible API — complete with a beautiful Persian admin dashboard.**
+**A high-performance, self-hosted AI proxy server that translates Google Gemini, DeepSeek (V3 & R1 with automatic PoW solver), and ChatGPT web sessions into fully OpenAI-compatible and Anthropic-compatible API endpoints — complete with real-time `reasoning_content` (thinking) streams and a beautiful Persian admin dashboard.**
 
 <br>
 <img src="docs/dashboard_panel.jpg" alt="Admin Dashboard" width="100%">
@@ -33,14 +43,17 @@
 
 | Feature | Details |
 |---------|---------|
+| 🌐 **Multi-Provider Engine** | Seamlessly proxy **Google Gemini**, **DeepSeek (V3 & R1)**, and **ChatGPT** |
+| 🧠 **DeepSeek PoW Solver** | Pure-Python 23-round Keccak-f[1600] solver handles `DeepSeekHashV1` automatically |
+| 💡 **Reasoning Stream** | Real-time `reasoning_content` thinking tokens for DeepSeek-R1 and Gemini Extended |
 | 🤝 **OpenAI Compatible** | Drop-in replacement for `POST /v1/chat/completions` and `GET /v1/models` |
 | 🔶 **Anthropic Compatible** | Full `POST /anthropic/v1/messages` support |
-| 🌊 **Real-time Streaming** | Token-by-token SSE streaming on all endpoints |
+| 🌊 **Real-time Streaming** | Token-by-token SSE streaming preserving 100% of formatting, indentation, and spaces |
 | 🔒 **TLS Fingerprinting** | `curl-cffi` Chrome-120 impersonation — bypasses bot detection |
-| 🔄 **Account Pooling** | Round-robin load balancing + automatic failover across multiple accounts |
-| 🍪 **Cookie Auto-Refresh** | Background task validates & refreshes Gemini cookies every 55 minutes |
+| 🔄 **Account Pooling** | Round-robin load balancing + automatic cooldown failover across all accounts |
+| 🍪 **Cookie Auto-Refresh** | Background task validates & refreshes session cookies automatically |
 | 🗝️ **API Key Auth** | Generate/revoke `sk-omni-...` keys with full audit trail |
-| 📊 **Admin Dashboard** | Glassmorphic dark-mode Persian UI with live traffic charts |
+| 📊 **Admin Dashboard** | Glassmorphic dark-mode Persian UI with live traffic charts and playground |
 | 🖼️ **Multi-modal** | Image input support via Gemini Vision models |
 | 🐋 **Docker Ready** | Multi-stage Dockerfile + compose + Render Blueprint |
 
@@ -81,22 +94,22 @@ cp .env.example .env
 # Edit .env: set ADMIN_PASSWORD and ADMIN_SECRET_KEY
 
 # Run
-uvicorn app.main:app --host 0.0.0.0 --port 8080 --reload
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
 ```
 
-Open `http://localhost:8080/admin` → login (`admin` / `changeme`) → add your Gemini account.
+Open `http://localhost:8000/admin` → login (`admin` / `changeme`) → add your Gemini account.
 
 ### Docker Compose
 
 ```bash
-docker-compose up -d
+docker compose up -d
 ```
 
 ### Docker (single container)
 
 ```bash
 docker build -t omnibridge .
-docker run -d -p 8080:8000 \
+docker run -d -p 8000:8000 \
   -e ADMIN_PASSWORD=mysecretpassword \
   -e ADMIN_SECRET_KEY=$(openssl rand -hex 32) \
   -v $(pwd)/data:/app/data \
@@ -114,7 +127,7 @@ docker run -d -p 8080:8000 \
 | `ADMIN_SECRET_KEY` | `supersecretkey` | Session signing key (use a long random string) |
 | `GEMINI_ENABLED` | `true` | Enable Gemini provider |
 | `DATABASE_PATH` | `./data/omnibridge.db` | SQLite database path |
-| `PORT` | `8080` | Server port |
+| `PORT` | `8000` | Server port |
 | `LOG_LEVEL` | `info` | Logging verbosity |
 
 All settings can also be configured in [`config.yaml`](config.yaml).
@@ -185,7 +198,7 @@ Authorization: Bearer sk-omni-...
 ### cURL Example
 
 ```bash
-curl http://localhost:8080/v1/chat/completions \
+curl http://localhost:8000/v1/chat/completions \
   -H "Authorization: Bearer sk-omni-xxxx" \
   -H "Content-Type: application/json" \
   -d '{"model":"gemini-3.6-flash","messages":[{"role":"user","content":"Say hello"}],"stream":false}'
@@ -193,7 +206,7 @@ curl http://localhost:8080/v1/chat/completions \
 
 ## 🛠️ Admin Dashboard
 
-Access at `http://localhost:8080/admin`
+Access at `http://localhost:8000/admin`
 
 | Tab | Description |
 |-----|-------------|
@@ -267,6 +280,7 @@ OmniBridge/
 │   ├── routes/
 │   │   ├── openai.py        # /v1/chat/completions, /v1/models
 │   │   ├── anthropic.py     # /anthropic/v1/messages
+│   │   ├── google_proxy.py  # /google/* pass-through proxy
 │   │   └── admin.py         # Admin REST API + SPA serving
 │   └── admin/
 │       ├── static/css/      # Glassmorphic design system

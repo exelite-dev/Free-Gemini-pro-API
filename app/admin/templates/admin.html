@@ -3,10 +3,39 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>OmniBridge — پنل مدیریت هوشمند</title>
-  <meta name="description" content="OmniBridge — داشبورد مدیریت پیشرفته پروکسی."/>
+  <title>OmniBridge — پنل مدیریت هوشمند AI Proxy</title>
+  <meta name="description" content="OmniBridge — داشبورد مدیریت پیشرفته پروکسی هوش مصنوعی چند-پروایدر."/>
   <link rel="stylesheet" href="/admin/static/css/admin.css"/>
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <style>
+    .thinking-accordion {
+      margin-bottom: 0.75rem;
+      background: rgba(99, 102, 241, 0.08);
+      border: 1px solid rgba(99, 102, 241, 0.25);
+      border-radius: var(--radius-sm);
+      padding: 0.5rem 0.75rem;
+    }
+    .thinking-accordion summary {
+      cursor: pointer;
+      font-weight: 600;
+      color: var(--accent-primary);
+      font-size: 0.82rem;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+    .thinking-accordion-body {
+      margin-top: 0.5rem;
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      white-space: pre-wrap;
+      border-top: 1px dashed rgba(99, 102, 241, 0.2);
+      padding-top: 0.5rem;
+      font-family: inherit;
+    }
+  </style>
 </head>
 <body>
 
@@ -15,7 +44,7 @@
   <div class="login-card">
     <div class="login-logo">
       <h1>⬡ OmniBridge</h1>
-      <p>داشبورد مدیریت سیستم · لطفاً لاگین کنید</p>
+      <p>داشبورد مدیریت هوشمند پروکسی · لطفاً لاگین کنید</p>
     </div>
     <div class="form-group">
       <label for="login-user">نام کاربری</label>
@@ -52,7 +81,7 @@
       <div class="nav-label" style="margin-top:1rem">ابزارها & API</div>
       <div class="nav-item" data-page="cookies" onclick="showPage('cookies')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
-        <span>راهنمای استخراج کوکی</span>
+        <span>راهنمای استخراج کوکی و توکن</span>
       </div>
       <div class="nav-item" data-page="apikeys" onclick="showPage('apikeys')">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2l-2 2m-7.61 7.61a5.5 5.5 0 1 1-7.778 7.778 5.5 5.5 0 0 1 7.777-7.777zm0 0L15.5 7.5m0 0l3 3L22 7l-3-3m-3.5 3.5L19 4"/></svg>
@@ -117,15 +146,31 @@
       <div class="card" style="margin-bottom:1.5rem">
         <div class="card-header">
           <h3>تنظیمات ارائه‌دهندگان فعال (Provider Switches)</h3>
-          <span style="font-size:0.85rem;color:var(--text-muted)">روشن/خاموش کردن سرویس‌ها</span>
+          <span style="font-size:0.85rem;color:var(--text-muted)">روشن/خاموش کردن سرویس‌ها به صورت لحظه‌ای</span>
         </div>
-        <div class="grid grid-1" style="gap:1rem">
+        <div class="grid grid-3" style="gap:1rem">
           <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg-surface);padding:1rem 1.25rem;border-radius:var(--radius-md);border:1px solid var(--glass-border)">
             <div>
               <div style="font-weight:700;font-size:0.95rem;color:var(--text-primary)">Google Gemini</div>
-              <div style="font-size:0.78rem;color:var(--text-secondary);margin-top:0.1rem">gemini-3-pro, gemini-3-flash, gemini-2.5-pro, gemini-2.5-flash</div>
+              <div style="font-size:0.75rem;color:var(--text-secondary);margin-top:0.1rem">gemini-3.6-flash, gemini-3.1-pro, extended</div>
             </div>
             <div class="toggle-switch" id="toggle-gemini" onclick="toggleProvider('gemini')"></div>
+          </div>
+
+          <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg-surface);padding:1rem 1.25rem;border-radius:var(--radius-md);border:1px solid var(--glass-border)">
+            <div>
+              <div style="font-weight:700;font-size:0.95rem;color:var(--text-primary)">DeepSeek</div>
+              <div style="font-size:0.75rem;color:var(--text-secondary);margin-top:0.1rem">deepseek-chat (V3), deepseek-reasoner (R1)</div>
+            </div>
+            <div class="toggle-switch" id="toggle-deepseek" onclick="toggleProvider('deepseek')"></div>
+          </div>
+
+          <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg-surface);padding:1rem 1.25rem;border-radius:var(--radius-md);border:1px solid var(--glass-border)">
+            <div>
+              <div style="font-weight:700;font-size:0.95rem;color:var(--text-primary)">ChatGPT</div>
+              <div style="font-size:0.75rem;color:var(--text-secondary);margin-top:0.1rem">gpt-4o, gpt-4o-mini, o1-mini, o3-mini</div>
+            </div>
+            <div class="toggle-switch" id="toggle-chatgpt" onclick="toggleProvider('chatgpt')"></div>
           </div>
         </div>
       </div>
@@ -145,7 +190,7 @@
     <div id="page-accounts" class="page">
       <div class="page-header">
         <h1>مدیریت مجموعه اکانت‌ها</h1>
-        <p>افزودن و پیکربندی اکانت‌های پروکسی جهت توزیع بار (Load Balancing)</p>
+        <p>افزودن و پیکربندی اکانت‌های Gemini، DeepSeek و ChatGPT جهت توزیع بار (Load Balancing)</p>
       </div>
 
       <div class="grid grid-2" style="margin-bottom:1.5rem">
@@ -158,15 +203,18 @@
             <label for="acct-provider">ارائه‌دهنده (Provider)</label>
             <select id="acct-provider" onchange="onProviderSelectChange()">
               <option value="gemini">Google Gemini</option>
+              <option value="deepseek">DeepSeek</option>
+              <option value="chatgpt">ChatGPT</option>
             </select>
           </div>
           <div class="form-group">
             <label for="acct-label">عنوان یا برچسب شناسه</label>
-            <input id="acct-label" type="text" placeholder="مثلاً: اکانت اصلی Gemini Pro #1"/>
+            <input id="acct-label" type="text" placeholder="مثلاً: اکانت اصلی #1"/>
           </div>
 
           <!-- Dynamic cred fields -->
           <div id="cred-fields">
+            <!-- Gemini Fields -->
             <div id="cred-gemini">
               <div class="form-group">
                 <label for="cred-psid">کوکی __Secure-1PSID</label>
@@ -179,13 +227,31 @@
               <div class="form-group" style="margin-top:1rem; padding:1rem; border:1px solid rgba(255,255,255,0.1); border-radius:var(--radius-md); background:rgba(0,0,0,0.15)">
                 <label style="display:flex; align-items:center; gap:0.5rem; cursor:pointer;">
                   <input type="checkbox" id="cred-vision-toggle" onchange="document.getElementById('vision-key-wrap').style.display=this.checked?'block':'none'"/>
-                  <span style="font-weight:600; color:var(--accent-primary)">پشتیبانی از پردازش عکس (نیاز به API Key رسمی)</span>
+                  <span style="font-weight:600; color:var(--accent-primary)">پشتیبانی از پردازش عکس (نیاز به API Key رسمی AI Studio)</span>
                 </label>
                 <div id="vision-key-wrap" style="display:none; margin-top:0.75rem;">
                   <label for="cred-apikey" style="font-size:0.85rem">Google Gemini API Key (AI Studio)</label>
                   <input id="cred-apikey" type="password" placeholder="AIzaSy..." class="ltr"/>
                   <small style="color:var(--text-muted); display:block; margin-top:0.3rem">اگر کاربر عکسی بفرستد، سیستم به جای کوکی‌ها، از این کلید برای پردازش عکس استفاده می‌کند.</small>
                 </div>
+              </div>
+            </div>
+
+            <!-- DeepSeek Fields -->
+            <div id="cred-deepseek" style="display:none">
+              <div class="form-group">
+                <label for="cred-ds-token">توکن ورود DeepSeek (userToken)</label>
+                <input id="cred-ds-token" type="password" placeholder="مقدار userToken از LocalStorage یا Authorization Bearer" class="ltr"/>
+                <small style="color:var(--text-muted); display:block; margin-top:0.3rem">از سایت chat.deepseek.com بخش F12 → Application → Local Storage یا کوکی userToken قابل استخراج است.</small>
+              </div>
+            </div>
+
+            <!-- ChatGPT Fields -->
+            <div id="cred-chatgpt" style="display:none">
+              <div class="form-group">
+                <label for="cred-cgp-token">کوکی یا توکن نشست ChatGPT (__Secure-next-auth.session-token)</label>
+                <input id="cred-cgp-token" type="password" placeholder="eyJhbGciOi... یا session token" class="ltr"/>
+                <small style="color:var(--text-muted); display:block; margin-top:0.3rem">از سایت chatgpt.com بخش F12 → Application → Cookies مقدار __Secure-next-auth.session-token را کپی کنید.</small>
               </div>
             </div>
           </div>
@@ -198,10 +264,18 @@
           <div class="card-header">
             <h3>آمار مجموعه فعال</h3>
           </div>
-          <div style="display:flex;flex-direction:column;gap:1.25rem;margin-top:0.5rem">
-            <div style="background:var(--bg-surface);padding:1.25rem;border-radius:var(--radius-md);border:1px solid rgba(99,102,241,0.25)">
-              <div style="font-size:0.85rem;color:var(--accent-primary);font-weight:600">تعداد اکانت‌های Google Gemini</div>
-              <div style="font-size:2.2rem;font-weight:800;margin-top:0.2rem" id="gemini-acct-count">0</div>
+          <div style="display:flex;flex-direction:column;gap:1rem;margin-top:0.5rem">
+            <div style="background:var(--bg-surface);padding:1rem;border-radius:var(--radius-md);border:1px solid rgba(99,102,241,0.25);display:flex;justify-content:space-between;align-items:center">
+              <div style="font-size:0.85rem;color:var(--accent-primary);font-weight:600">اکانت‌های Google Gemini</div>
+              <div style="font-size:1.8rem;font-weight:800" id="gemini-acct-count">0</div>
+            </div>
+            <div style="background:var(--bg-surface);padding:1rem;border-radius:var(--radius-md);border:1px solid rgba(6,182,212,0.25);display:flex;justify-content:space-between;align-items:center">
+              <div style="font-size:0.85rem;color:var(--accent-secondary);font-weight:600">اکانت‌های DeepSeek</div>
+              <div style="font-size:1.8rem;font-weight:800" id="deepseek-acct-count">0</div>
+            </div>
+            <div style="background:var(--bg-surface);padding:1rem;border-radius:var(--radius-md);border:1px solid rgba(16,185,129,0.25);display:flex;justify-content:space-between;align-items:center">
+              <div style="font-size:0.85rem;color:var(--accent-success);font-weight:600">اکانت‌های ChatGPT</div>
+              <div style="font-size:1.8rem;font-weight:800" id="chatgpt-acct-count">0</div>
             </div>
           </div>
         </div>
@@ -234,14 +308,14 @@
       </div>
     </div>
 
-    <!-- ── PAGE: Cookie Guide ── -->
+    <!-- ── PAGE: Cookie & Token Guide ── -->
     <div id="page-cookies" class="page">
       <div class="page-header">
-        <h1>راهنمای تصویری و گام‌به‌گام استخراج کوکی‌ها</h1>
-        <p>بدون نیاز به دانش فنی! فقط طبق مراحل ساده و تصاویر زیر پیش بروید</p>
+        <h1>راهنمای استخراج کوکی‌ها و توکن‌ها</h1>
+        <p>راهنمای گام‌به‌گام و ساده برای استخراج اعتبارنامه‌های Gemini، DeepSeek و ChatGPT</p>
       </div>
 
-      <!-- Quick Shortcut Tips Banner -->
+      <!-- Shortcut Tips Banner -->
       <div style="background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.25);padding:1.25rem 1.5rem;border-radius:var(--radius-md);margin-bottom:1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem">
         <div style="display:flex;align-items:center;gap:0.75rem">
           <div style="font-size:1.5rem">⌨️</div>
@@ -259,50 +333,50 @@
         <!-- Gemini Guide -->
         <div class="card">
           <div class="card-header">
-            <h3>🌐 استخراج کوکی‌های Google Gemini (تصویری)</h3>
-            <span class="badge badge-blue">ویژه اکانت Gemini Pro/Advanced</span>
+            <h3>🌐 ۱. استخراج کوکی‌های Google Gemini</h3>
+            <span class="badge badge-blue">Google Gemini</span>
           </div>
-
-          <!-- Step 1 -->
-          <div style="background:var(--bg-surface);padding:1rem;border-radius:var(--radius-md);margin-bottom:1rem;border:1px solid var(--glass-border)">
-            <div style="display:flex;align-items:center;gap:0.5rem;font-weight:700;color:var(--accent-primary);margin-bottom:0.4rem">
-              <span style="background:var(--accent-primary);color:#fff;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:0.75rem">۱</span>
-              ورود به سایت Gemini و باز کردن DevTools
-            </div>
-            <div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.7">
-              وارد سایت <a href="https://gemini.google.com" target="_blank" style="color:var(--accent-secondary);text-decoration:underline">gemini.google.com</a> شوید. کلید <code class="mono">F12</code> را روی کیبورد بزنید.
-            </div>
+          <div style="font-size:0.88rem;color:var(--text-secondary);line-height:1.8">
+            <ol style="padding-right:1.2rem">
+              <li>وارد سایت <a href="https://gemini.google.com" target="_blank" style="color:var(--accent-secondary);text-decoration:underline">gemini.google.com</a> شوید و با اکانت گوگل خود لاگین کنید.</li>
+              <li>کلید <code class="mono">F12</code> را بزنید تا DevTools باز شود.</li>
+              <li>از تب‌های بالا وارد <strong style="color:#fff">Application</strong> شوید.</li>
+              <li>از منوی سمت چپ بخش <strong style="color:#fff">Storage → Cookies → https://gemini.google.com</strong> را انتخاب کنید.</li>
+              <li>دو کوکی با نام‌های <code class="mono">__Secure-1PSID</code> و <code class="mono">__Secure-1PSIDTS</code> را پیدا کرده، روی مقدار (Value) آنها دابل‌کلیک و کپی کنید.</li>
+            </ol>
           </div>
+        </div>
 
-          <!-- Step 2 -->
-          <div style="background:var(--bg-surface);padding:1rem;border-radius:var(--radius-md);margin-bottom:1rem;border:1px solid var(--glass-border)">
-            <div style="display:flex;align-items:center;gap:0.5rem;font-weight:700;color:var(--accent-primary);margin-bottom:0.4rem">
-              <span style="background:var(--accent-primary);color:#fff;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:0.75rem">۲</span>
-              رفتن به تب Application و بخش Cookies
-            </div>
-            <div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.7">
-              در تب بالا <strong style="color:var(--text-primary)">Application</strong> را بزنید. از سمت چپ: <strong style="color:var(--text-primary)">Cookies → gemini.google.com</strong> را کلیک کنید.
-            </div>
+        <!-- DeepSeek Guide -->
+        <div class="card">
+          <div class="card-header">
+            <h3>🐋 ۲. استخراج توکن DeepSeek (userToken)</h3>
+            <span class="badge badge-green">DeepSeek V3 / R1</span>
           </div>
-
-          <!-- Real User Screenshot for Gemini Cookies -->
-          <div style="background:var(--bg-deep);border:1px solid var(--glass-border-hi);border-radius:var(--radius-md);padding:0.75rem;margin-bottom:1rem;text-align:center">
-            <div style="font-size:0.8rem;color:var(--text-secondary);margin-bottom:0.6rem;font-weight:600">📸 تصویر واقعی محیط مرورگر Chrome DevTools (نحوه انتخاب __Secure-1PSID و __Secure-1PSIDTS):</div>
-            <img src="/admin/static/img/gemini_cookies_guide.png" alt="راهنمای تصویری کوکی های جمنای" style="width:100%;height:auto;border-radius:8px;border:1px solid rgba(255,255,255,0.15);box-shadow:0 8px 25px rgba(0,0,0,0.5)"/>
-            <div style="margin-top:0.6rem;font-size:0.8rem;color:var(--accent-success);background:rgba(16,185,129,0.1);padding:0.4rem 0.6rem;border-radius:var(--radius-sm);border:1px solid rgba(16,185,129,0.25)">
-              💡 مطابق تصویر فوق، کافیست روی مقدار جلوی <code class="mono">__Secure-1PSID</code> و <code class="mono">__Secure-1PSIDTS</code> دو بار کلیک کرده و کپی کنید.
-            </div>
+          <div style="font-size:0.88rem;color:var(--text-secondary);line-height:1.8">
+            <ol style="padding-right:1.2rem">
+              <li>وارد سایت <a href="https://chat.deepseek.com" target="_blank" style="color:var(--accent-secondary);text-decoration:underline">chat.deepseek.com</a> شوید و لاگین کنید.</li>
+              <li>کلید <code class="mono">F12</code> را بزنید تا پنجره ابزار توسعه‌دهنده باز شود.</li>
+              <li>وارد تب <strong style="color:#fff">Application</strong> شوید.</li>
+              <li>از منوی سمت چپ، بخش <strong style="color:#fff">Local Storage → https://chat.deepseek.com</strong> را انتخاب کنید.</li>
+              <li>کلید <code class="mono">userToken</code> (یا در بخش Cookies کوکی با نام <code class="mono">userToken</code>) را پیدا کرده و مقدار آن را کپی کنید.</li>
+            </ol>
           </div>
+        </div>
 
-          <!-- Step 3 -->
-          <div style="background:var(--bg-surface);padding:1rem;border-radius:var(--radius-md);border:1px solid var(--glass-border)">
-            <div style="display:flex;align-items:center;gap:0.5rem;font-weight:700;color:var(--accent-success);margin-bottom:0.4rem">
-              <span style="background:var(--accent-success);color:#fff;width:22px;height:22px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:0.75rem">۳</span>
-              کپی و قرار دادن در تب مدیریت اکانت‌ها
-            </div>
-            <div style="font-size:0.85rem;color:var(--text-secondary);line-height:1.7">
-              به تب <strong style="color:var(--text-primary)">مدیریت اکانت‌ها</strong> بروید، دو مقدار کپی شده را جای‌گذاری کرده و «ذخیره» را بزنید!
-            </div>
+        <!-- ChatGPT Guide -->
+        <div class="card">
+          <div class="card-header">
+            <h3>🟢 ۳. استخراج توکن نشست ChatGPT (__Secure-next-auth.session-token)</h3>
+            <span class="badge badge-purple">ChatGPT Web</span>
+          </div>
+          <div style="font-size:0.88rem;color:var(--text-secondary);line-height:1.8">
+            <ol style="padding-right:1.2rem">
+              <li>وارد سایت <a href="https://chatgpt.com" target="_blank" style="color:var(--accent-secondary);text-decoration:underline">chatgpt.com</a> شوید و وارد حساب کاربری خود شوید.</li>
+              <li>کلید <code class="mono">F12</code> را بزنید.</li>
+              <li>وارد تب <strong style="color:#fff">Application</strong> شده و از ستون سمت چپ به <strong style="color:#fff">Cookies → https://chatgpt.com</strong> بروید.</li>
+              <li>کوکی <code class="mono">__Secure-next-auth.session-token</code> را پیدا کرده و مقدار Value آن را کپی کنید.</li>
+            </ol>
           </div>
         </div>
       </div>
@@ -320,7 +394,7 @@
           <svg width="20" height="20" fill="none" stroke="var(--accent-primary)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
           <h3 style="margin:0; color:var(--accent-primary); font-size:1rem;">آدرس سرور شما (Base URL برای تنظیمات)</h3>
         </div>
-        <p style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:0.75rem;">این آدرس را کپی کرده و دقیقاً در قسمت <strong>Base URL</strong> یا <strong>OpenAI Endpoint</strong> نرم‌افزار خود قرار دهید:</p>
+        <p style="font-size:0.85rem; color:var(--text-secondary); margin-bottom:0.75rem;">این آدرس را کپی کرده و در قسمت <strong>Base URL</strong> یا <strong>OpenAI Endpoint</strong> نرم‌افزار خود قرار دهید:</p>
         <div style="display:flex; align-items:center; gap:0.75rem">
           <code id="dynamic-base-url" class="mono ltr" style="font-size:1.05rem; color:var(--text-primary); flex:1; background:var(--bg-deep); padding:0.5rem 0.8rem; border-radius:var(--radius-sm)">در حال محاسبه...</code>
           <button class="btn btn-secondary btn-sm" onclick="copyBaseUrl()">کپی آدرس</button>
@@ -375,8 +449,8 @@
     <!-- ── PAGE: Playground ── -->
     <div id="page-playground" class="page">
       <div class="page-header">
-        <h1>محیط چت و تست مدل‌ها (Playground)</h1>
-        <p>تست زنده مدل‌ها و ارسال مستقیم پرامپت از داخل پنل مدیریت</p>
+        <h1>محیط چت و تست زنده مدل‌ها (Playground)</h1>
+        <p>تست زنده مدل‌های Gemini, DeepSeek (با مشاهده زنده فرآیند فکر کردن) و ChatGPT</p>
       </div>
 
       <div class="grid grid-3" style="gap:1.5rem">
@@ -407,9 +481,9 @@
               <label for="pg-system" style="margin-bottom:0">دستور سیستم (System Prompt)</label>
             </div>
             <div style="display:flex;gap:0.4rem;margin-bottom:0.5rem;flex-wrap:wrap">
-              <button class="btn btn-secondary btn-sm" style="font-size:0.75rem;padding:0.25rem 0.6rem" onclick="document.getElementById('pg-system').value='تو یک مهندس نرم‌افزار و متخصص ارشد کدنویسی پایتون و جاوااسکریپت هستی. کدهای تمیز، بهینه و با توضیحات دقیق بنویس.'">💻 کدنویسی</button>
-              <button class="btn btn-secondary btn-sm" style="font-size:0.75rem;padding:0.25rem 0.6rem" onclick="document.getElementById('pg-system').value='تو یک مترجم ارشد و حرفه‌ای هستی. متون را با لحنی بسیار روان، دقیق و طبیعی به فارسی ترجمه کن.'">🌍 ترجمه</button>
-              <button class="btn btn-secondary btn-sm" style="font-size:0.75rem;padding:0.25rem 0.6rem" onclick="document.getElementById('pg-system').value='تو یک خلاصه‌ساز حرفه‌ای هستی. نکات کلیدی متن را به صورت بالت‌پوینت و فوق‌العاده کوتاه خلاصه‌سازی کن.'">⚡ خلاصه‌ساز</button>
+              <button class="btn btn-secondary btn-sm" style="font-size:0.75rem;padding:0.25rem 0.6rem" onclick="document.getElementById('pg-system').value='تو یک مهندس نرم‌افزار ارشد هستی. کدهای تمیز و بهینه بنویس.'">💻 کدنویسی</button>
+              <button class="btn btn-secondary btn-sm" style="font-size:0.75rem;padding:0.25rem 0.6rem" onclick="document.getElementById('pg-system').value='متن را با لحنی بسیار روان و طبیعی به فارسی ترجمه کن.'">🌍 ترجمه</button>
+              <button class="btn btn-secondary btn-sm" style="font-size:0.75rem;padding:0.25rem 0.6rem" onclick="document.getElementById('pg-system').value='نکات کلیدی متن را به صورت خلاصه و بولت‌پوینت ارائه بده.'">⚡ خلاصه‌ساز</button>
             </div>
             <textarea id="pg-system" rows="3" placeholder="مثلاً: تو یک دستیار برنامه‌نویسی و تحلیل‌گر ارشد هستی."></textarea>
           </div>
@@ -425,7 +499,7 @@
             </div>
           </div>
           
-          <!-- Modern ChatGPT-style Chat Bar -->
+          <!-- Modern Chat Bar -->
           <div style="display:flex;flex-direction:column;margin-top:1rem;background:var(--bg-deep);border:1px solid var(--glass-border-hi);border-radius:var(--radius-md);padding:0.85rem">
             <textarea id="chat-input" rows="3" placeholder="پیام خود را تایپ کنید... (Enter برای ارسال، Shift+Enter برای خط جدید)" onkeydown="handleChatKey(event)" style="border:none;background:transparent;resize:none;outline:none;width:100%;font-family:inherit;font-size:0.95rem;color:var(--text-primary)"></textarea>
             <div style="display:flex;justify-content:space-between;align-items:center;padding-top:0.6rem;margin-top:0.4rem;border-top:1px solid var(--glass-border)">
@@ -471,39 +545,58 @@
       <!-- Models List Card -->
       <div class="card" style="margin-bottom:1.5rem">
         <div class="card-header">
-          <h3>📋 شناسه مدل‌های Gemini جهت افزودن به Cursor / Apps</h3>
+          <h3>📋 لیست شناسه‌های قابل استفاده در Cursor / NextChat</h3>
         </div>
-        <div class="grid grid-2" style="gap:1rem">
-          <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg-surface);padding:0.85rem 1.1rem;border-radius:var(--radius-sm);border:1px solid var(--glass-border)">
-            <div>
-              <div style="font-weight:700;font-size:0.9rem">gemini-3.6-flash</div>
-              <div style="font-size:0.75rem;color:var(--text-muted)">مدل اصلی، بسیار سریع و هوشمند (پیش‌فرض)</div>
+        <div class="grid grid-3" style="gap:1rem">
+          <!-- Gemini -->
+          <div style="background:var(--bg-surface);padding:0.85rem 1.1rem;border-radius:var(--radius-sm);border:1px solid var(--glass-border)">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem">
+              <strong style="color:var(--accent-primary)">gemini-3.6-flash</strong>
+              <button class="btn btn-secondary btn-sm" onclick="navigator.clipboard.writeText('gemini-3.6-flash');toast('کپی شد!','info')">کپی</button>
             </div>
-            <button class="btn btn-secondary btn-sm" onclick="navigator.clipboard.writeText('gemini-3.6-flash');toast('کپی شد!','info')">کپی</button>
+            <div style="font-size:0.75rem;color:var(--text-muted)">مدل پرسرعت و همه‌کاره گوگل</div>
           </div>
 
-          <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg-surface);padding:0.85rem 1.1rem;border-radius:var(--radius-sm);border:1px solid var(--glass-border)">
-            <div>
-              <div style="font-weight:700;font-size:0.9rem">gemini-3.1-pro</div>
-              <div style="font-size:0.75rem;color:var(--text-muted)">قدرتمندترین مدل کدنویسی و ریاضیات سنگین</div>
+          <div style="background:var(--bg-surface);padding:0.85rem 1.1rem;border-radius:var(--radius-sm);border:1px solid var(--glass-border)">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem">
+              <strong style="color:var(--accent-primary)">gemini-3.1-pro</strong>
+              <button class="btn btn-secondary btn-sm" onclick="navigator.clipboard.writeText('gemini-3.1-pro');toast('کپی شد!','info')">کپی</button>
             </div>
-            <button class="btn btn-secondary btn-sm" onclick="navigator.clipboard.writeText('gemini-3.1-pro');toast('کپی شد!','info')">کپی</button>
+            <div style="font-size:0.75rem;color:var(--text-muted)">مدل استدلال و کدنویسی پیشرفته گوگل</div>
           </div>
 
-          <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg-surface);padding:0.85rem 1.1rem;border-radius:var(--radius-sm);border:1px solid var(--glass-border)">
-            <div>
-              <div style="font-weight:700;font-size:0.9rem">gemini-pro-extended</div>
-              <div style="font-size:0.75rem;color:var(--text-muted)">حالت استدلال عمیق (Extended Thinking)</div>
+          <div style="background:var(--bg-surface);padding:0.85rem 1.1rem;border-radius:var(--radius-sm);border:1px solid var(--glass-border)">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem">
+              <strong style="color:var(--accent-primary)">gemini-pro-extended</strong>
+              <button class="btn btn-secondary btn-sm" onclick="navigator.clipboard.writeText('gemini-pro-extended');toast('کپی شد!','info')">کپی</button>
             </div>
-            <button class="btn btn-secondary btn-sm" onclick="navigator.clipboard.writeText('gemini-pro-extended');toast('کپی شد!','info')">کپی</button>
+            <div style="font-size:0.75rem;color:var(--text-muted)">مدل فکری با استدلال عمیق</div>
           </div>
 
-          <div style="display:flex;align-items:center;justify-content:space-between;background:var(--bg-surface);padding:0.85rem 1.1rem;border-radius:var(--radius-sm);border:1px solid var(--glass-border)">
-            <div>
-              <div style="font-weight:700;font-size:0.9rem">gemini-3.5-flash-lite</div>
-              <div style="font-size:0.75rem;color:var(--text-muted)">سریع‌ترین مدل پاسخگویی آنی</div>
+          <!-- DeepSeek -->
+          <div style="background:var(--bg-surface);padding:0.85rem 1.1rem;border-radius:var(--radius-sm);border:1px solid var(--glass-border)">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem">
+              <strong style="color:var(--accent-secondary)">deepseek-chat</strong>
+              <button class="btn btn-secondary btn-sm" onclick="navigator.clipboard.writeText('deepseek-chat');toast('کپی شد!','info')">کپی</button>
             </div>
-            <button class="btn btn-secondary btn-sm" onclick="navigator.clipboard.writeText('gemini-3.5-flash-lite');toast('کپی شد!','info')">کپی</button>
+            <div style="font-size:0.75rem;color:var(--text-muted)">مدل قدرتمند DeepSeek V3</div>
+          </div>
+
+          <div style="background:var(--bg-surface);padding:0.85rem 1.1rem;border-radius:var(--radius-sm);border:1px solid var(--glass-border)">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem">
+              <strong style="color:var(--accent-secondary)">deepseek-reasoner</strong>
+              <button class="btn btn-secondary btn-sm" onclick="navigator.clipboard.writeText('deepseek-reasoner');toast('کپی شد!','info')">کپی</button>
+            </div>
+            <div style="font-size:0.75rem;color:var(--text-muted)">مدل فوق‌استدلالی DeepSeek R1</div>
+          </div>
+
+          <!-- ChatGPT -->
+          <div style="background:var(--bg-surface);padding:0.85rem 1.1rem;border-radius:var(--radius-sm);border:1px solid var(--glass-border)">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem">
+              <strong style="color:var(--accent-success)">gpt-4o</strong>
+              <button class="btn btn-secondary btn-sm" onclick="navigator.clipboard.writeText('gpt-4o');toast('کپی شد!','info')">کپی</button>
+            </div>
+            <div style="font-size:0.75rem;color:var(--text-muted)">مدل اصلی OpenAI GPT-4o</div>
           </div>
         </div>
       </div>
@@ -515,20 +608,20 @@
         </div>
         <div style="line-height:1.9;font-size:0.9rem;color:var(--text-secondary)">
           <div style="margin-bottom:0.75rem">
-            <strong style="color:var(--accent-primary)">۱.</strong> نرم‌افزار <strong>Cursor</strong> را باز کنید و وارد <strong>Settings</strong> (آیکون چرخ‌دنده بالا سمت راست) شوید.
+            <strong style="color:var(--accent-primary)">۱.</strong> نرم‌افزار <strong>Cursor</strong> را باز کرده و وارد <strong>Settings</strong> شوید.
           </div>
           <div style="margin-bottom:0.75rem">
             <strong style="color:var(--accent-primary)">۲.</strong> وارد تب <strong>Models</strong> شوید.
           </div>
           <div style="margin-bottom:0.75rem">
-            <strong style="color:var(--accent-primary)">۳.</strong> بخش <strong>OpenAI API Key</strong> را پیدا کنید:
+            <strong style="color:var(--accent-primary)">۳.</strong> در بخش <strong>OpenAI API Key</strong>:
             <ul style="margin-top:0.4rem;padding-right:1.5rem">
               <li>مقدار API Key را بگذارید: <code class="mono" style="background:var(--bg-deep);padding:0.1rem 0.4rem;border-radius:4px;color:#fff">sk-test</code></li>
-              <li>گزینه <strong>Override OpenAI Base URL</strong> را فعال کرده و مقدار را قرار دهید: <code class="mono" style="background:var(--bg-deep);padding:0.1rem 0.4rem;border-radius:4px;color:#fff">http://localhost:8080/v1</code></li>
+              <li>گزینه <strong>Override OpenAI Base URL</strong> را روشن کرده و آدرس سرور را وارد کنید: <code class="mono" style="background:var(--bg-deep);padding:0.1rem 0.4rem;border-radius:4px;color:#fff">http://localhost:8000/v1</code></li>
             </ul>
           </div>
           <div>
-            <strong style="color:var(--accent-primary)">۴.</strong> در لیست مدل‌ها روی <strong>Add model</strong> کلیک کرده و نام مدل را تایپ کنید: <code class="mono" style="background:var(--bg-deep);padding:0.1rem 0.4rem;border-radius:4px;color:#fff">gemini-3.6-flash</code>
+            <strong style="color:var(--accent-primary)">۴.</strong> روی <strong>Add model</strong> کلیک کرده و مدل‌های دلخواه مانند <code class="mono">deepseek-reasoner</code> یا <code class="mono">gemini-3.6-flash</code> را اضافه کنید.
           </div>
         </div>
       </div>
@@ -538,130 +631,44 @@
     <div id="page-deployment" class="page">
       <div class="page-header">
         <h1>🌐 راهنمای انتشار، دیپلوی و میزبانی (Deployment Guide)</h1>
-        <p>آموزش گام‌به‌گام راه‌اندازی OmniBridge روی سرویس‌های ابری رایگان و سرورهای اختصاصی جهت اشتراک‌گذاری با کاربران کانال تلگرام و گیت‌هاب</p>
+        <p>آموزش گام‌به‌گام راه‌اندازی OmniBridge روی سرویس‌های ابری رایگان و سرورهای اختصاصی</p>
       </div>
 
-      <!-- FREE PLATFORMS -->
       <div class="card" style="margin-bottom:1.5rem">
         <div class="card-header" style="border-bottom:1px solid var(--glass-border);padding-bottom:0.75rem;margin-bottom:1.25rem">
           <h3 style="color:var(--accent-success);display:flex;align-items:center;gap:0.5rem">
-            <span>🎁 ۱. دیپلوی روی سرویس‌های ابری ۱۰۰٪ رایگان</span>
+            <span>🎁 ۱. دیپلوی روی سرویس‌های ابری ۱۰۰٪ رایگان (Render & Docker)</span>
           </h3>
         </div>
 
         <div class="grid grid-2" style="gap:1.25rem">
-          <!-- Render.com -->
           <div style="background:var(--bg-surface-elev);border:1px solid rgba(16,185,129,0.25);border-radius:var(--radius-md);padding:1.25rem">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">
               <strong style="font-size:1.1rem;color:#fff">☁️ Render.com (پیشنهاد اصلی)</strong>
               <span class="badge badge-green">رایگان + SSL</span>
             </div>
             <p style="font-size:0.85rem;line-height:1.7;margin-bottom:1rem;color:var(--text-secondary)">
-              بهترین پلتفرم رایگان برای اجرای پروکسی‌های FastAPI. این پروژه دارای فایل آماده <code class="mono">render.yaml</code> و <code class="mono">Dockerfile</code> است.
+              بهترین پلتفرم رایگان برای اجرای پروکسی‌های FastAPI.
             </p>
-            <ol style="font-size:0.85rem;line-height:1.8;padding-right:1.2rem;color:var(--text-secondary);margin-bottom:1rem">
-              <li>پروژه را به ریپوزیتوری <strong>GitHub</strong> خود منتقل (Push/Fork) کنید.</li>
-              <li>وارد سایت <a href="https://dashboard.render.com" target="_blank" style="color:var(--accent-secondary)">Render.com</a> شده و روی <strong>New +</strong> ← <strong>Web Service</strong> کلیک کنید.</li>
-              <li>ریپوزیتوری گیت‌هاب خود را متصل کرده و <strong>Runtime</strong> را روی <strong>Docker</strong> بگذارید.</li>
-              <li>در بخش Environment Variables متغیرهای زیر را ست کنید:
-                <div style="margin-top:0.4rem;background:var(--bg-deep);padding:0.5rem;border-radius:6px" class="mono ltr">
-                  ADMIN_USERNAME=admin<br/>
-                  ADMIN_PASSWORD=your_secure_password<br/>
-                  SECRET_KEY=your_random_secret_string
-                </div>
-              </li>
-              <li>روی <strong>Create Web Service</strong> کلیک کنید. آدرس لایو شما صادر می‌شود!</li>
+            <ol style="font-size:0.85rem;line-height:1.8;padding-right:1.2rem;color:var(--text-secondary)">
+              <li>پروژه را به ریپوزیتوری <strong>GitHub</strong> خود منتقل کنید.</li>
+              <li>وارد <a href="https://dashboard.render.com" target="_blank" style="color:var(--accent-secondary)">Render.com</a> شده و یک <strong>Web Service</strong> بسازید.</li>
+              <li>در متغیرهای محیطی، <code class="mono">ADMIN_USERNAME</code> و <code class="mono">ADMIN_PASSWORD</code> را تنظیم کنید.</li>
             </ol>
           </div>
 
-          <!-- Hugging Face Spaces -->
           <div style="background:var(--bg-surface-elev);border:1px solid rgba(6,182,212,0.25);border-radius:var(--radius-md);padding:1.25rem">
             <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">
-              <strong style="font-size:1.1rem;color:#fff">🤗 Hugging Face Spaces</strong>
-              <span class="badge badge-blue">Docker SDK رایگان</span>
+              <strong style="font-size:1.1rem;color:#fff">🐳 Docker و سرور لینوکس (VPS)</strong>
+              <span class="badge badge-blue">سرعت بالا</span>
             </div>
             <p style="font-size:0.85rem;line-height:1.7;margin-bottom:1rem;color:var(--text-secondary)">
-              میزبانی فوق‌العاده با سهمیه منابع بالا و پایداری عالی بدون خاموش شدن سرور.
+              با یک دستور ساده روی هر سرور اوبونتو یا دبیان اجرا کنید:
             </p>
-            <ol style="font-size:0.85rem;line-height:1.8;padding-right:1.2rem;color:var(--text-secondary);margin-bottom:1rem">
-              <li>وارد <a href="https://huggingface.co/spaces" target="_blank" style="color:var(--accent-secondary)">HuggingFace Spaces</a> شوید.</li>
-              <li>روی <strong>Create new Space</strong> کلیک کرده و نام آن را مشخص کنید.</li>
-              <li>گزینه <strong>Space SDK</strong> را روی <strong>Docker</strong> و Blank Template قرار دهید.</li>
-              <li>فایل‌های کدهای OmniBridge را آپلود یا گیت کنید.</li>
-              <li>در فایل Dockerfile پورت 7860 را Expose کنید. وب‌سایت به صورت خودکار لایو می‌شود!</li>
-            </ol>
-          </div>
-        </div>
-      </div>
-
-      <!-- PAID & VPS PLATFORMS -->
-      <div class="card" style="margin-bottom:1.5rem">
-        <div class="card-header" style="border-bottom:1px solid var(--glass-border);padding-bottom:0.75rem;margin-bottom:1.25rem">
-          <h3 style="color:var(--accent-primary);display:flex;align-items:center;gap:0.5rem">
-            <span>⚡ ۲. میزبانی روی سرور اختصاصی و VPS (پولی / با بالاترین سرعت)</span>
-          </h3>
-        </div>
-
-        <div style="line-height:1.8;font-size:0.9rem;color:var(--text-secondary)">
-          <p style="margin-bottom:1rem">
-            برای کاربرانی که قصد دارند سرویس پروکسی را با پایداری ۹۹.۹٪، سرعت پاسخگویی آنی زیر ۱ ثانیه و پشتیبانی از صدها کاربر همزمان اجرا کنند، استفاده از سرور виртуальный (VPS) یا سرورهای خارجی پیشنهاد می‌شود:
-          </p>
-
-          <div class="grid grid-3" style="gap:1rem;margin-bottom:1.25rem">
-            <div style="background:var(--bg-deep);padding:1rem;border-radius:var(--radius-sm);border:1px solid var(--glass-border)">
-              <div style="font-weight:700;color:#fff;margin-bottom:0.3rem">🖥️ Hetzner / Vultr / DigitalOcean</div>
-              <div style="font-size:0.8rem">سرورهای خارجی ابری از ۴ الی ۵ یورو در ماه با اینترنت گیگابیتی و پینگ عالی.</div>
-            </div>
-
-            <div style="background:var(--bg-deep);padding:1rem;border-radius:var(--radius-sm);border:1px solid var(--glass-border)">
-              <div style="font-weight:700;color:#fff;margin-bottom:0.3rem">🇮🇷 سرورهای مجازی ایران</div>
-              <div style="font-size:0.8rem">مناسب برای کمترین تاخیر در اتصال کاربران داخل کشور (نیاز به پل بین‌الملل جهت اتصال به گوگل دارد).</div>
-            </div>
-
-            <div style="background:var(--bg-deep);padding:1rem;border-radius:var(--radius-sm);border:1px solid var(--glass-border)">
-              <div style="font-weight:700;color:#fff;margin-bottom:0.3rem">🐳 اجرای ۱-کلیکه داکر</div>
-              <div style="font-size:0.8rem">اجرای کل پروژه روی هر سروری فقط با دستور اختصاصی <code class="mono">docker compose up -d</code></div>
-            </div>
-          </div>
-
-          <!-- Docker Setup Commands -->
-          <div style="background:var(--bg-deep);border:1px solid var(--glass-border-hi);border-radius:var(--radius-md);padding:1.25rem">
-            <div style="font-weight:700;color:var(--accent-primary);margin-bottom:0.6rem">💻 دستورات راه‌اندازی سریع روی سرور مجازی (Linux Ubuntu):</div>
-            <pre class="mono ltr" style="background:#000;padding:1rem;border-radius:6px;color:#38bdf8;overflow-x:auto;font-size:0.85rem">
-# 1. کلون کردن ریپوزیتوری گیت‌هاب
-git clone https://github.com/YOUR_USERNAME/OmniBridge.git
-cd OmniBridge
-
-# 2. تنظیم متغیرهای محیطی
-cp .env.example .env
-nano .env
-
-# 3. اجرای مستقیم با Docker Compose
-docker compose up -d --build
-
-# 4. بررسی وضعیت اجرا
-docker compose ps
-docker compose logs -f
-</pre>
-          </div>
-        </div>
-      </div>
-
-      <!-- TELEGRAM & GITHUB PUBLISHING CHECKLIST -->
-      <div class="card">
-        <div class="card-header">
-          <h3>📢 چک‌لیست انتشار پروژه در گیت‌هاب و کانال تلگرام</h3>
-        </div>
-        <div style="line-height:1.9;font-size:0.9rem;color:var(--text-secondary)">
-          <div style="margin-bottom:0.75rem">
-            <strong style="color:var(--accent-success)">۱. عدم انتشار اطلاعات شخصی:</strong> مطمئن شوید فایل <code class="mono">omnibridge.db</code> و متغیرهای حساس شخصی شامل کوکی‌ها در فایل <code class="mono">.gitignore</code> قرار داشته باشند.
-          </div>
-          <div style="margin-bottom:0.75rem">
-            <strong style="color:var(--accent-success)">۲. فایل README کامل:</strong> پروژه دارای دو فایل راهنمای جامع <code class="mono">README.md</code> (انگلیسی) و <code class="mono">README.fa.md</code> (فارسی) است که تمام دستورات و اسکرین‌شات‌ها را داراست.
-          </div>
-          <div>
-            <strong style="color:var(--accent-success)">۳. دکمه Deploy to Render:</strong> می‌توانید لینک مستقیم زیر را در بنر کانال تلگرام خود برای کاربران قرار دهید تا با یک کلیک سرور اختصاصی خود را بسازند:
-            <code class="mono ltr" style="display:block;margin-top:0.4rem;background:var(--bg-deep);padding:0.6rem 0.8rem;border-radius:6px;color:#a855f7">https://render.com/deploy?repo=https://github.com/YOUR_USERNAME/OmniBridge</code>
+            <code class="mono ltr" style="display:block;background:var(--bg-deep);padding:0.6rem;border-radius:6px;font-size:0.85rem;color:#fff">
+              docker build -t omnibridge .<br/>
+              docker run -d -p 8000:8000 omnibridge
+            </code>
           </div>
         </div>
       </div>
@@ -670,30 +677,31 @@ docker compose logs -f
   </main>
 </div>
 
-<!-- ══════════════════════════════════════════════════════ TOAST ══ -->
-<div id="toast-container"></div>
-
+<!-- ══════════════════════════════════════════════════════ JS LOGIC ══ -->
 <script>
-// ── Helpers ──
 const $ = id => document.getElementById(id);
 
 function toast(msg, type='info') {
-  const c = $('toast-container');
-  const d = document.createElement('div');
-  d.className = `toast toast-${type}`;
-  d.textContent = msg;
-  c.appendChild(d);
-  setTimeout(() => d.remove(), 4000);
+  const t = document.createElement('div');
+  t.className = `toast toast-${type}`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => t.classList.add('show'), 10);
+  setTimeout(() => {
+    t.classList.remove('show');
+    setTimeout(() => t.remove(), 300);
+  }, 3000);
 }
 
 function formatDate(ts) {
-  if (!ts) return 'هرگز';
-  return new Date(ts * 1000).toLocaleString('fa-IR');
+  if (!ts) return '-';
+  const d = new Date(ts * 1000);
+  return d.toLocaleDateString('fa-IR') + ' ' + d.toLocaleTimeString('fa-IR', {hour:'2-digit', minute:'2-digit'});
 }
 
-function maskKey(key) {
-  if (!key || key.length < 12) return key;
-  return key.slice(0, 8) + '••••••••' + key.slice(-4);
+function maskKey(k) {
+  if (!k || k.length < 8) return '****';
+  return k.slice(0, 7) + '...' + k.slice(-4);
 }
 
 async function apiCall(method, url, body=null) {
@@ -805,13 +813,11 @@ async function loadDashboard() {
     const p = d.providers || {};
     const perProvider = m.per_provider || {};
 
-    // Aggregate stats across all providers
-    let totalReqs = 0, totalSucc = 0, totalLatSum = 0, provCount = 0;
+    let totalReqs = 0, totalSucc = 0, totalLatSum = 0;
     for (const [pr, stats] of Object.entries(perProvider)) {
       totalReqs += stats.total || 0;
       totalSucc += stats.successes || 0;
       totalLatSum += (stats.avg_latency_ms || 0) * (stats.total || 0);
-      provCount++;
     }
     const successRate = totalReqs > 0 ? ((totalSucc / totalReqs) * 100).toFixed(1) : '100.0';
     const avgLat = totalReqs > 0 ? (totalLatSum / totalReqs).toFixed(0) : '0';
@@ -821,11 +827,13 @@ async function loadDashboard() {
     $('stat-latency').textContent = avgLat + ' ms';
 
     const activeCount = Object.values(p).filter(Boolean).length;
-    $('stat-providers').textContent = `${activeCount} / ${Object.keys(p).length}`;
+    $('stat-providers').textContent = `${activeCount} / ${Object.keys(p).length || 3}`;
 
-    // Sync Toggles — only gemini exists now
-    const el = $('toggle-gemini');
-    if (el) el.classList.toggle('on', !!p['gemini']);
+    // Sync Toggles
+    ['gemini', 'deepseek', 'chatgpt'].forEach(pr => {
+      const el = $(`toggle-${pr}`);
+      if (el) el.classList.toggle('on', !!p[pr]);
+    });
 
     // Chart update
     renderChart(m.time_series || []);
@@ -834,13 +842,12 @@ async function loadDashboard() {
 
 function renderChart(timeseries) {
   const ctx = $('metricsChart').getContext('2d');
-  // timeseries items: { bucket: <int offset from cutoff>, requests: <int>, ok: <int> }
   const labels = timeseries.map(t => {
     const minutesAgo = (timeseries.length - 1 - timeseries.indexOf(t));
     if (minutesAgo === 0) return 'هم‌اکنون';
     return `-${minutesAgo}min`;
   });
-  const data   = timeseries.map(t => t.requests || 0);
+  const data = timeseries.map(t => t.requests || 0);
 
   if (metricsChart) metricsChart.destroy();
 
@@ -874,21 +881,29 @@ function renderChart(timeseries) {
 
 async function toggleProvider(provider) {
   const el = $(`toggle-${provider}`);
-  const nextState = !el.classList.contains('on');
+  const currentState = el ? el.classList.contains('on') : false;
+  const newState = !currentState;
   try {
-    const res = await apiCall('POST', `/admin/api/providers/${provider}/toggle`, {enabled: nextState});
+    const res = await apiCall('POST', `/admin/api/providers/${provider}/toggle`, { enabled: newState });
     if (res.ok) {
-      el.classList.toggle('on', nextState);
-      toast(`ارائه‌دهنده ${provider} ${nextState ? 'فعال' : 'غیرفعال'} شد`, 'info');
-      await loadDashboard();
+      if (el) el.classList.toggle('on', newState);
+      toast(`وضعیت ${provider} به ${newState ? 'فعال' : 'غیرفعال'} تغییر یافت`, 'success');
+      loadDashboard();
+    } else {
+      const d = await res.json();
+      toast(d.detail || 'خطا در تغییر وضعیت ارائه‌دهنده', 'error');
     }
-  } catch(e) { toast('خطا در تغییر وضعیت ارائه‌دهنده', 'error'); }
+  } catch(e) {
+    toast('خطا در ارتباط با سرور: ' + e, 'error');
+  }
 }
 
 // ── Accounts ──
 function onProviderSelectChange() {
   const p = $('acct-provider').value;
-  $('cred-gemini').style.display = p === 'gemini' ? 'block' : 'none';
+  $('cred-gemini').style.display   = p === 'gemini' ? 'block' : 'none';
+  $('cred-deepseek').style.display = p === 'deepseek' ? 'block' : 'none';
+  $('cred-chatgpt').style.display  = p === 'chatgpt' ? 'block' : 'none';
 }
 
 async function editAccount(id) {
@@ -914,9 +929,12 @@ async function editAccount(id) {
       $('vision-key-wrap').style.display = 'none';
       $('cred-apikey').value = '';
     }
+  } else if (acct.provider === 'deepseek') {
+    $('cred-ds-token').value = creds.userToken || creds.token || '';
+  } else if (acct.provider === 'chatgpt') {
+    $('cred-cgp-token').value = creds.session_token || creds.access_token || creds.token || '';
   }
   
-  // Set edit mode ID on save button
   const btn = document.getElementById('save-acct-btn');
   btn.textContent = 'ویرایش و بروزرسانی اکانت';
   btn.setAttribute('data-edit-id', id);
@@ -936,12 +954,19 @@ async function addAccount() {
     const psidts = $('cred-psidts').value.trim();
     if (!psid) { toast('لطفاً کوکی __Secure-1PSID را وارد کنید', 'error'); return; }
     credentials = { secure_1psid: psid, secure_1psidts: psidts };
-    
     if ($('cred-vision-toggle').checked) {
       const apiKey = $('cred-apikey').value.trim();
       if (!apiKey) { toast('لطفاً کلید API را برای پشتیبانی از عکس وارد کنید', 'error'); return; }
       credentials.api_key = apiKey;
     }
+  } else if (provider === 'deepseek') {
+    const token = $('cred-ds-token').value.trim();
+    if (!token) { toast('لطفاً توکن userToken دیپ‌سیک را وارد کنید', 'error'); return; }
+    credentials = { userToken: token };
+  } else if (provider === 'chatgpt') {
+    const token = $('cred-cgp-token').value.trim();
+    if (!token) { toast('لطفاً توکن نشست یا access token چت‌جی‌پی‌تی را وارد کنید', 'error'); return; }
+    credentials = { session_token: token };
   }
 
   try {
@@ -971,9 +996,11 @@ async function loadAccounts() {
     if (!res.ok) return;
     const accounts = await res.json();
     window._accountsCache = accounts;
-    let gCount=0;
+    let gCount = 0, dsCount = 0, cgpCount = 0;
     const rows = accounts.map(a => {
-      if (a.provider==='gemini') gCount++;
+      if (a.provider === 'gemini') gCount++;
+      if (a.provider === 'deepseek') dsCount++;
+      if (a.provider === 'chatgpt') cgpCount++;
       return `<tr>
         <td>${a.id}</td>
         <td><span class="badge badge-blue">${a.provider}</span></td>
@@ -990,38 +1017,21 @@ async function loadAccounts() {
       </tr>`;
     });
     $('accounts-tbody').innerHTML = rows.join('')||`<tr><td colspan="7" style="text-align:center;color:var(--text-muted)">هنوز اکانتی ثبت نشده است.</td></tr>`;
-    const gElem = $('gemini-acct-count');
-    if (gElem) gElem.textContent = gCount;
+    
+    if ($('gemini-acct-count')) $('gemini-acct-count').textContent = gCount;
+    if ($('deepseek-acct-count')) $('deepseek-acct-count').textContent = dsCount;
+    if ($('chatgpt-acct-count')) $('chatgpt-acct-count').textContent = cgpCount;
 
     // Sync provider toggles
     const stRes = await apiCall('GET', '/admin/api/providers');
     if (stRes.ok) {
       const states = await stRes.json();
-      ['gemini'].forEach(pr => {
+      ['gemini', 'deepseek', 'chatgpt'].forEach(pr => {
         const el = $(`toggle-${pr}`);
         if (el) el.classList.toggle('on', !!states[pr]);
       });
     }
   } catch(e) { console.error(e); }
-}
-
-async function toggleProvider(provider) {
-  const el = $(`toggle-${provider}`);
-  const currentState = el ? el.classList.contains('on') : false;
-  const newState = !currentState;
-  try {
-    const res = await apiCall('POST', `/admin/api/providers/${provider}/toggle`, { enabled: newState });
-    if (res.ok) {
-      if (el) el.classList.toggle('on', newState);
-      toast(`وضعیت ${provider} به ${newState ? 'فعال' : 'غیرفعال'} تغییر یافت`, 'success');
-      loadDashboard();
-    } else {
-      const d = await res.json();
-      toast(d.detail || 'خطا در تغییر وضعیت ارائه‌دهنده', 'error');
-    }
-  } catch(e) {
-    toast('خطا در ارتباط با سرور: ' + e, 'error');
-  }
 }
 
 async function testAccount(id) {
@@ -1147,14 +1157,14 @@ function clearChat() {
     <div style="font-size:2.5rem;margin-bottom:0.5rem">💬</div>مدل را انتخاب کرده و گفتگو را شروع کنید.</div>`;
 }
 
-function appendMessage(role, content, streaming=false) {
+function appendMessage(role, content) {
   const msgs = $('chat-messages');
   const placeholder = msgs.querySelector('div[style*="margin:auto"]');
   if (placeholder) placeholder.remove();
 
   const div = document.createElement('div');
   div.className = `chat-message ${role}`;
-  div.innerHTML = `<div class="msg-role">${role}</div><div class="msg-bubble" id="msg-${Date.now()}"></div>`;
+  div.innerHTML = `<div class="msg-role">${role}</div><div class="msg-bubble" id="msg-${Date.now()}">${content}</div>`;
   msgs.appendChild(div);
   msgs.scrollTop = msgs.scrollHeight;
   return div.querySelector('.msg-bubble');
@@ -1184,7 +1194,7 @@ async function sendChat() {
   const msgId = 'msg-' + Date.now();
   const aDiv = document.createElement('div');
   aDiv.className = 'chat-message assistant';
-  aDiv.innerHTML = `<div class="msg-role">assistant</div>
+  aDiv.innerHTML = `<div class="msg-role">assistant (${model})</div>
     <div class="msg-bubble" id="${msgId}">
       <div class="typing-indicator"><span></span><span></span><span></span></div>
     </div>`;
@@ -1193,6 +1203,7 @@ async function sendChat() {
 
   const bubble = $(msgId);
   let fullText = '';
+  let fullThinking = '';
 
   const messages = [];
   if (system) messages.push({role:'system', content: system});
@@ -1220,7 +1231,7 @@ async function sendChat() {
       return;
     }
 
-    bubble.textContent = '';
+    bubble.innerHTML = '';
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let done = false;
@@ -1240,26 +1251,46 @@ async function sendChat() {
         if (raw === '[DONE]') { done = true; break; }
         try {
           const chunk = JSON.parse(raw);
-          // Handle server-sent error chunks
           if (chunk.error && (chunk.error.message || chunk.error.detail)) {
             const errTxt = chunk.error.message || chunk.error.detail;
             bubble.innerHTML = `<span style="color:var(--accent-danger)">خطا: ${errTxt}</span>`;
             done = true;
             break;
           }
-          const delta = chunk.choices?.[0]?.delta?.content || chunk.choices?.[0]?.text || '';
+          const delta = chunk.choices?.[0]?.delta;
           if (delta) {
-            fullText += delta;
-            bubble.textContent = fullText;
-            msgs.scrollTop = msgs.scrollHeight;
+            if (delta.reasoning_content) {
+              fullThinking += delta.reasoning_content;
+              let thinkElem = bubble.querySelector('.thinking-accordion');
+              if (!thinkElem) {
+                thinkElem = document.createElement('details');
+                thinkElem.className = 'thinking-accordion';
+                thinkElem.open = true;
+                thinkElem.innerHTML = `<summary>🧠 در حال تفکر (Thinking Process)...</summary><div class="thinking-accordion-body"></div>`;
+                bubble.prepend(thinkElem);
+              }
+              thinkElem.querySelector('.thinking-accordion-body').textContent = fullThinking;
+              msgs.scrollTop = msgs.scrollHeight;
+            }
+            if (delta.content) {
+              fullText += delta.content;
+              let textElem = bubble.querySelector('.main-content-text');
+              if (!textElem) {
+                textElem = document.createElement('div');
+                textElem.className = 'main-content-text';
+                textElem.style.whiteSpace = 'pre-wrap';
+                bubble.appendChild(textElem);
+              }
+              textElem.textContent = fullText;
+              msgs.scrollTop = msgs.scrollHeight;
+            }
           }
         } catch(e) { /* ignore malformed chunks */ }
       }
     }
 
-    if (fullText) {
+    if (fullText || fullThinking) {
       chatHistory.push({ role: 'assistant', content: fullText });
-      // Add copy button to assistant bubble
       const copyBtn = document.createElement('button');
       copyBtn.className = 'btn btn-secondary btn-sm';
       copyBtn.style.cssText = 'margin-top:0.5rem;font-size:0.75rem;padding:0.25rem 0.6rem';
@@ -1269,9 +1300,9 @@ async function sendChat() {
         copyBtn.textContent = '✅ کپی شد!';
         setTimeout(() => copyBtn.textContent = '📋 کپی پاسخ', 2000);
       };
-      aDiv.querySelector('.msg-bubble').appendChild(copyBtn);
+      bubble.appendChild(copyBtn);
     } else if (!bubble.innerHTML.includes('خطا')) {
-      bubble.innerHTML = `<span style="color:var(--accent-danger)">خطا: پاسخی از ارائه‌دهنده دریافت نشد. لطفاً از اعتبار کوکی/کلید مطمئن شوید.</span>`;
+      bubble.innerHTML = `<span style="color:var(--accent-danger)">خطا: پاسخی از ارائه‌دهنده دریافت نشد. لطفاً از اعتبار کوکی/توکن مطمئن شوید.</span>`;
     }
   } catch(e) {
     bubble.innerHTML = `<span style="color:var(--accent-danger)">خطای شبکه: ${e.message}</span>`;
@@ -1283,7 +1314,6 @@ async function sendChat() {
 
 // Init & Auto Refresh
 window.addEventListener('DOMContentLoaded', () => {
-  // Set dynamic Base URL
   const baseUrl = window.location.origin + '/v1';
   const baseUrlEl = document.getElementById('dynamic-base-url');
   if(baseUrlEl) baseUrlEl.textContent = baseUrl;
@@ -1293,7 +1323,6 @@ window.addEventListener('DOMContentLoaded', () => {
 
   checkAuth();
 
-  // Enter key triggers login
   [$('login-user'), $('login-pass')].forEach(el => {
     if (el) el.addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
   });

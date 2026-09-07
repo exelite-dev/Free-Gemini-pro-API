@@ -36,7 +36,7 @@ When deploying OmniBridge, please follow these guidelines:
 ### Network
 - Run OmniBridge behind a **reverse proxy** (nginx, Caddy) with TLS in production
 - Restrict access to the `/admin` path via IP allowlist if possible
-- Do not expose port `8080` directly to the internet without TLS
+- Do not expose port `8000` directly to the internet without TLS
 
 ### API Keys
 - The default `sk-test` key is intended for **local development only**

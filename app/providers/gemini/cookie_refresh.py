@@ -33,7 +33,7 @@ async def _refresh_single_account(account: Dict[str, Any]) -> None:
 
     try:
         async with AsyncSession(impersonate="chrome120") as session:
-            await engine._get_session_tokens(session, credentials)
+            await engine._get_session_tokens(session, credentials, account_id=account["id"])
             logger.info(
                 "Gemini account %d (%s): heartbeat successful & cookies refreshed.",
                 account["id"],
