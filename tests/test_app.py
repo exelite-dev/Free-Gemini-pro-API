@@ -123,10 +123,11 @@ def test_models_endpoint_all_providers():
         model_ids = [m["id"] for m in data["data"]]
 
         # Gemini Provider models
-        assert "gemini-3.5-flash-lite" in model_ids
-        assert "gemini-3.6-flash" in model_ids
-        assert "gemini-3.1-pro" in model_ids
-        assert "gemini-pro-extended" in model_ids
+        assert "gemini-2.5-pro" in model_ids
+        assert "gemini-2.5-flash" in model_ids
+        assert "gemini-2.0-flash-thinking-exp" in model_ids
+        assert "gemini-1.5-pro" in model_ids
+        assert "gemini-1.5-flash" in model_ids
 
         # DeepSeek Provider models
         assert "deepseek-chat" in model_ids

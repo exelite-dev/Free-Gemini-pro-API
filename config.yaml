@@ -21,65 +21,41 @@ providers:
     request_timeout: 60
     max_retries: 3
     models:
-      - id: "gemini-3.8-pro"
-        display_name: "Gemini 3.8 Pro (Ultra High-End)"
-        context_window: 2000000
-        supports_vision: true
-      - id: "gemini-3.8-flash"
-        display_name: "Gemini 3.8 Flash (Ultra Fast)"
-        context_window: 1000000
-        supports_vision: true
-      - id: "gemini-3.7-pro"
-        display_name: "Gemini 3.7 Pro (Advanced Reasoning)"
-        context_window: 2000000
-        supports_vision: true
-      - id: "gemini-3.7-flash"
-        display_name: "Gemini 3.7 Flash (Fast & Capable)"
-        context_window: 1000000
-        supports_vision: true
-      - id: "gemini-3.7-flash-thinking"
-        display_name: "Gemini 3.7 Flash Thinking (Extended Thought)"
-        context_window: 1000000
-        supports_vision: true
-      - id: "gemini-3.6-flash"
-        display_name: "Gemini 3.6 Flash (All-around)"
-        context_window: 1000000
-        supports_vision: true
-      - id: "gemini-3.5-flash-lite"
-        display_name: "Gemini 3.5 Flash-Lite (Fastest)"
-        context_window: 1000000
-        supports_vision: true
-      - id: "gemini-3.1-pro"
-        display_name: "Gemini 3.1 Pro (Advanced Math & Code)"
-        context_window: 1000000
-        supports_vision: true
-      - id: "gemini-pro-extended"
-        display_name: "Gemini Pro Extended (Thinking)"
-        context_window: 1000000
-        supports_vision: true
-      - id: "gemini-3-pro"
-        display_name: "Gemini 3 Pro"
-        context_window: 1000000
-        supports_vision: true
-      - id: "gemini-3-flash"
-        display_name: "Gemini 3 Flash"
-        context_window: 1000000
-        supports_vision: true
       - id: "gemini-2.5-pro"
-        display_name: "Gemini 2.5 Pro"
-        context_window: 1000000
+        display_name: "Gemini 2.5 Pro (Flagship Reasoning & Coding)"
+        context_window: 2000000
         supports_vision: true
       - id: "gemini-2.5-flash"
-        display_name: "Gemini 2.5 Flash"
+        display_name: "Gemini 2.5 Flash (Ultra Fast & Capable)"
+        context_window: 1000000
+        supports_vision: true
+      - id: "gemini-2.0-flash-thinking-exp"
+        display_name: "Gemini 2.0 Flash Thinking Exp (Step-by-Step Thought)"
+        context_window: 1000000
+        supports_vision: true
+      - id: "gemini-2.0-pro-exp"
+        display_name: "Gemini 2.0 Pro Experimental"
+        context_window: 2000000
+        supports_vision: true
+      - id: "gemini-2.0-flash"
+        display_name: "Gemini 2.0 Flash"
         context_window: 1000000
         supports_vision: true
       - id: "gemini-1.5-pro"
         display_name: "Gemini 1.5 Pro"
-        context_window: 1000000
+        context_window: 2000000
         supports_vision: true
       - id: "gemini-1.5-flash"
         display_name: "Gemini 1.5 Flash"
         context_window: 1000000
+        supports_vision: true
+      - id: "gemini-1.5-flash-8b"
+        display_name: "Gemini 1.5 Flash 8B (Lightweight)"
+        context_window: 1000000
+        supports_vision: true
+      - id: "gemini-exp-1206"
+        display_name: "Gemini 1206 Experimental"
+        context_window: 2000000
         supports_vision: true
 
   deepseek:
