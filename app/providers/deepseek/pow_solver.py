@@ -240,8 +240,9 @@ async def get_and_solve_pow(
         if resp.status_code == 200:
             data = resp.json()
             biz_data = data.get("data", {}).get("biz_data", {})
-            if biz_data and biz_data.get("algorithm") == "DeepSeekHashV1":
-                solution = await asyncio.to_thread(solve_pow_challenge, biz_data)
+            challenge_obj = biz_data.get("challenge") if (isinstance(biz_data, dict) and "challenge" in biz_data) else biz_data
+            if challenge_obj and challenge_obj.get("algorithm") == "DeepSeekHashV1":
+                solution = await asyncio.to_thread(solve_pow_challenge, challenge_obj)
                 return encode_pow_response(solution)
         logger.warning(
             "Failed to get DeepSeek PoW challenge (HTTP %d): %s",

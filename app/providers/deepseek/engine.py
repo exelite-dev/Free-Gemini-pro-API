@@ -35,18 +35,32 @@ class DeepSeekEngine(AbstractProvider):
         self.config = config or {}
         self.timeout = self.config.get("request_timeout", 90)
 
-    def _extract_token(self, credentials: Dict[str, Any]) -> str:
-        """Extract userToken from credentials dictionary or string."""
+    def _extract_token(self, credentials: Any) -> str:
+        """Extract userToken from credentials dictionary or string, unwrapping JSON if needed."""
+        raw = ""
         if isinstance(credentials, str):
-            return credentials.strip()
-        token = (
-            credentials.get("userToken")
-            or credentials.get("token")
-            or credentials.get("user_token")
-            or credentials.get("cookie")
-            or ""
-        )
-        return str(token).strip()
+            raw = credentials.strip()
+        elif isinstance(credentials, dict):
+            raw = (
+                credentials.get("userToken")
+                or credentials.get("token")
+                or credentials.get("user_token")
+                or credentials.get("cookie")
+                or credentials.get("value")
+                or ""
+            )
+            raw = str(raw).strip()
+
+        if raw.startswith("{"):
+            try:
+                parsed = json.loads(raw)
+                if isinstance(parsed, dict) and "value" in parsed:
+                    return str(parsed["value"]).strip()
+                if isinstance(parsed, dict) and "userToken" in parsed:
+                    return str(parsed["userToken"]).strip()
+            except Exception:
+                pass
+        return raw
 
     def _build_headers(self, token: str, pow_header: Optional[str] = None) -> Dict[str, str]:
         headers = {
