@@ -21,12 +21,32 @@ providers:
     request_timeout: 60
     max_retries: 3
     models:
-      - id: "gemini-3.5-flash-lite"
-        display_name: "Gemini 3.5 Flash-Lite (Fastest)"
+      - id: "gemini-3.8-pro"
+        display_name: "Gemini 3.8 Pro (Ultra High-End)"
+        context_window: 2000000
+        supports_vision: true
+      - id: "gemini-3.8-flash"
+        display_name: "Gemini 3.8 Flash (Ultra Fast)"
+        context_window: 1000000
+        supports_vision: true
+      - id: "gemini-3.7-pro"
+        display_name: "Gemini 3.7 Pro (Advanced Reasoning)"
+        context_window: 2000000
+        supports_vision: true
+      - id: "gemini-3.7-flash"
+        display_name: "Gemini 3.7 Flash (Fast & Capable)"
+        context_window: 1000000
+        supports_vision: true
+      - id: "gemini-3.7-flash-thinking"
+        display_name: "Gemini 3.7 Flash Thinking (Extended Thought)"
         context_window: 1000000
         supports_vision: true
       - id: "gemini-3.6-flash"
         display_name: "Gemini 3.6 Flash (All-around)"
+        context_window: 1000000
+        supports_vision: true
+      - id: "gemini-3.5-flash-lite"
+        display_name: "Gemini 3.5 Flash-Lite (Fastest)"
         context_window: 1000000
         supports_vision: true
       - id: "gemini-3.1-pro"
