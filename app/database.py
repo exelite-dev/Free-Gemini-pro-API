@@ -154,11 +154,15 @@ async def init_db() -> None:
             or os.environ.get("SECURE_1PSIDTS")
             or ""
         )
+        gemini_api_key = os.environ.get("GEMINI_API_KEY") or os.environ.get("GOOGLE_API_KEY")
         if gemini_psid:
-            g_creds = json.dumps({
+            creds_data = {
                 "secure_1psid": gemini_psid.strip(),
                 "secure_1psidts": gemini_psidts.strip()
-            })
+            }
+            if gemini_api_key:
+                creds_data["api_key"] = gemini_api_key.strip()
+            g_creds = json.dumps(creds_data)
             async with db.execute("SELECT id FROM accounts WHERE provider='gemini' AND credentials=?", (g_creds,)) as cur:
                 if not await cur.fetchone():
                     await db.execute(

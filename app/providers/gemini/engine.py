@@ -366,10 +366,14 @@ class GeminiEngine(AbstractProvider):
         account_id: int,
         credentials: Dict[str, Any],
     ) -> AsyncGenerator[str, None]:
-        api_key = credentials.get("api_key")
+        api_key = (
+            credentials.get("api_key")
+            or os.environ.get("GEMINI_API_KEY")
+            or os.environ.get("GOOGLE_API_KEY")
+        )
         if not api_key:
             raise ProviderError(
-                "این کاربر از عکسی استفاده کرده است اما اکانت Gemini مربوطه (API Key) را برای پشتیبانی از عکس وارد نکرده است.", 
+                "برای ارسال و پردازش تصویر (Vision)، لطفاً یک کلید رایگان Gemini API Key از aistudio.google.com دریافت کرده و در متغیر محیطی GEMINI_API_KEY یا در پنل مدیریت داخل اکانت وارد کنید.", 
                 status_code=400
             )
 
