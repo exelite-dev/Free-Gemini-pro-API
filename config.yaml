@@ -21,6 +21,30 @@ providers:
     request_timeout: 60
     max_retries: 3
     models:
+      - id: "gemini-3.8-flash"
+        display_name: "Gemini 3.8 Flash (Antigravity High-Speed)"
+        context_window: 1000000
+        supports_vision: true
+      - id: "gemini-3.7-flash"
+        display_name: "Gemini 3.7 Flash (Antigravity Hybrid Fast)"
+        context_window: 1000000
+        supports_vision: true
+      - id: "gemini-3.6-flash"
+        display_name: "Gemini 3.6 Flash (Antigravity)"
+        context_window: 1000000
+        supports_vision: true
+      - id: "gemini-3.1-pro"
+        display_name: "Gemini 3.1 Pro (Antigravity Deep Reasoning)"
+        context_window: 2000000
+        supports_vision: true
+      - id: "gemini-3.5-flash-lite"
+        display_name: "Gemini 3.5 Flash-Lite (Fastest)"
+        context_window: 1000000
+        supports_vision: true
+      - id: "gemini-pro-extended"
+        display_name: "Gemini Pro Extended (Thinking)"
+        context_window: 2000000
+        supports_vision: true
       - id: "gemini-2.5-pro"
         display_name: "Gemini 2.5 Pro (Flagship Reasoning & Coding)"
         context_window: 2000000

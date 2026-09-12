@@ -43,6 +43,14 @@ _INIT_URL = "https://gemini.google.com/app"
 
 # ── Model IDs → internal Gemini model header IDs ──────────────────────────────
 _MODEL_HEADERS: Dict[str, Dict[str, str]] = {
+    # Antigravity Gemini Models
+    "gemini-3.8-flash":              {"x-goog-ext-525001261-jspb": '[1,null,null,null,"gemini-2-5-flash",null,null,0,[4],null,null,1]', "x-goog-ext-73010989-jspb": "[0]", "x-goog-ext-73010990-jspb": "[0]"},
+    "gemini-3.7-flash":              {"x-goog-ext-525001261-jspb": '[1,null,null,null,"gemini-2-5-flash",null,null,0,[4],null,null,1]', "x-goog-ext-73010989-jspb": "[0]", "x-goog-ext-73010990-jspb": "[0]"},
+    "gemini-3.6-flash":              {"x-goog-ext-525001261-jspb": '[1,null,null,null,"gemini-2-5-flash",null,null,0,[4],null,null,1]', "x-goog-ext-73010989-jspb": "[0]", "x-goog-ext-73010990-jspb": "[0]"},
+    "gemini-3.1-pro":                {"x-goog-ext-525001261-jspb": '[1,null,null,null,"9d8ca3786ebdfbea",null,null,0,[4],null,null,1]', "x-goog-ext-73010989-jspb": "[0]", "x-goog-ext-73010990-jspb": "[0]"},
+    "gemini-3.5-flash-lite":         {"x-goog-ext-525001261-jspb": '[1,null,null,null,"gemini-1-5-flash-8b",null,null,0,[4],null,null,1]', "x-goog-ext-73010989-jspb": "[0]", "x-goog-ext-73010990-jspb": "[0]"},
+    "gemini-pro-extended":           {"x-goog-ext-525001261-jspb": '[1,null,null,null,"9d8ca3786ebdfbea",null,null,0,[4],null,null,1]', "x-goog-ext-73010989-jspb": "[1]", "x-goog-ext-73010990-jspb": "[1]"},
+    # Official API Models
     "gemini-2.5-pro":                {"x-goog-ext-525001261-jspb": '[1,null,null,null,"gemini-2-5-pro",null,null,0,[4],null,null,1]', "x-goog-ext-73010989-jspb": "[0]", "x-goog-ext-73010990-jspb": "[0]"},
     "gemini-2.5-flash":              {"x-goog-ext-525001261-jspb": '[1,null,null,null,"gemini-2-5-flash",null,null,0,[4],null,null,1]', "x-goog-ext-73010989-jspb": "[0]", "x-goog-ext-73010990-jspb": "[0]"},
     "gemini-2.0-flash-thinking-exp": {"x-goog-ext-525001261-jspb": '[1,null,null,null,"9d8ca3786ebdfbea",null,null,0,[4],null,null,1]', "x-goog-ext-73010989-jspb": "[1]", "x-goog-ext-73010990-jspb": "[1]"},
@@ -55,6 +63,18 @@ _MODEL_HEADERS: Dict[str, Dict[str, str]] = {
 }
 
 _MODEL_ALIASES: Dict[str, str] = {
+    "3.8-flash": "gemini-3.8-flash",
+    "3.8": "gemini-3.8-flash",
+    "3.7-flash": "gemini-3.7-flash",
+    "3.7": "gemini-3.7-flash",
+    "3.6-flash": "gemini-3.6-flash",
+    "3.6": "gemini-3.6-flash",
+    "3.1-pro": "gemini-3.1-pro",
+    "3.1": "gemini-3.1-pro",
+    "3.5-flash-lite": "gemini-3.5-flash-lite",
+    "flash-lite": "gemini-3.5-flash-lite",
+    "pro-extended": "gemini-pro-extended",
+    "extended-thinking": "gemini-pro-extended",
     "2.5-pro": "gemini-2.5-pro",
     "2.5-flash": "gemini-2.5-flash",
     "2.0-flash": "gemini-2.0-flash",
