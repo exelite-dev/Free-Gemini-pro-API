@@ -142,9 +142,33 @@ async def init_db() -> None:
                 except Exception as e:
                     logger.error("Failed to parse %s env var: %s", env_var, e)
 
-        # Single token env shortcuts
-        if os.environ.get("DEEPSEEK_USER_TOKEN"):
-            ds_token = os.environ["DEEPSEEK_USER_TOKEN"].strip()
+        # Single token env shortcuts for Gemini, DeepSeek, ChatGPT
+        gemini_psid = (
+            os.environ.get("GEMINI_PSID")
+            or os.environ.get("GEMINI_SECURE_1PSID")
+            or os.environ.get("SECURE_1PSID")
+        )
+        gemini_psidts = (
+            os.environ.get("GEMINI_PSIDTS")
+            or os.environ.get("GEMINI_SECURE_1PSIDTS")
+            or os.environ.get("SECURE_1PSIDTS")
+            or ""
+        )
+        if gemini_psid:
+            g_creds = json.dumps({
+                "secure_1psid": gemini_psid.strip(),
+                "secure_1psidts": gemini_psidts.strip()
+            })
+            async with db.execute("SELECT id FROM accounts WHERE provider='gemini' AND credentials=?", (g_creds,)) as cur:
+                if not await cur.fetchone():
+                    await db.execute(
+                        "INSERT INTO accounts (provider, label, credentials, created_at) VALUES (?, ?, ?, ?)",
+                        ("gemini", "Env Gemini Account", g_creds, time.time()),
+                    )
+
+        ds_token = os.environ.get("DEEPSEEK_USER_TOKEN") or os.environ.get("DEEPSEEK_TOKEN")
+        if ds_token:
+            ds_token = ds_token.strip()
             ds_creds = json.dumps({"userToken": ds_token})
             async with db.execute("SELECT id FROM accounts WHERE provider='deepseek' AND credentials=?", (ds_creds,)) as cur:
                 if not await cur.fetchone():
@@ -153,8 +177,9 @@ async def init_db() -> None:
                         ("deepseek", "Env DeepSeek Token", ds_creds, time.time()),
                     )
 
-        if os.environ.get("CHATGPT_SESSION_TOKEN"):
-            cg_token = os.environ["CHATGPT_SESSION_TOKEN"].strip()
+        cg_token = os.environ.get("CHATGPT_SESSION_TOKEN") or os.environ.get("CHATGPT_TOKEN")
+        if cg_token:
+            cg_token = cg_token.strip()
             cg_creds = json.dumps({"session_token": cg_token})
             async with db.execute("SELECT id FROM accounts WHERE provider='chatgpt' AND credentials=?", (cg_creds,)) as cur:
                 if not await cur.fetchone():

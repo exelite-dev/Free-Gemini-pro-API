@@ -303,3 +303,23 @@ def test_multi_provider_database_accounts():
         assert any(a["id"] == id_cgp for a in cgp_accts)
 
     asyncio.run(_test())
+
+
+def test_env_var_account_seeding(monkeypatch):
+    monkeypatch.setenv("GEMINI_PSID", "test_psid_999")
+    monkeypatch.setenv("GEMINI_PSIDTS", "test_psidts_888")
+    monkeypatch.setenv("DEEPSEEK_TOKEN", "ds_token_777")
+    monkeypatch.setenv("CHATGPT_TOKEN", "cg_token_666")
+
+    async def _test():
+        await init_db()
+        gem_accts = await list_accounts("gemini")
+        assert any("test_psid_999" in str(a["credentials"]) for a in gem_accts)
+
+        ds_accts = await list_accounts("deepseek")
+        assert any("ds_token_777" in str(a["credentials"]) for a in ds_accts)
+
+        cg_accts = await list_accounts("chatgpt")
+        assert any("cg_token_666" in str(a["credentials"]) for a in cg_accts)
+
+    asyncio.run(_test())
