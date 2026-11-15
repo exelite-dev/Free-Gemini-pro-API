@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "OmniBridge Gemini Auto-Sync",
+  "version": "1.0.0",
+  "description": "Automatically captures and syncs Google Gemini cookies (__Secure-1PSID and __Secure-1PSIDTS) to your OmniBridge proxy.",
+  "permissions": [
+    "cookies",
+    "storage",
+    "alarms"
+  ],
+  "host_permissions": [
+    "https://*.google.com/*",
+    "https://gemini.google.com/*",
+    "https://*.onrender.com/*",
+    "http://localhost:*/*",
+    "http://127.0.0.1:*/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "OmniBridge Gemini Auto-Sync"
+  }
+}

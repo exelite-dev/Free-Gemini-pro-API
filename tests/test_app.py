@@ -341,3 +341,28 @@ def test_argon_and_orchestrator_models():
         assert "gemini-4-hydrogen" in model_ids
         assert "gemini-argon-orchestrator" in model_ids
 
+
+def test_sync_gemini_endpoint():
+    """Verify the /admin/api/sync-gemini auto-sync endpoint."""
+    app = create_app()
+    with TestClient(app) as client:
+        # 1. Unauthorized request
+        r_unauth = client.post("/admin/api/sync-gemini", json={"secure_1psid": "p", "secure_1psidts": "t"})
+        assert r_unauth.status_code == 401
+
+        # 2. Authorized request with Bearer API Key
+        r_sync = client.post(
+            "/admin/api/sync-gemini",
+            headers={"Authorization": "Bearer sk-test"},
+            json={
+                "secure_1psid": "fresh_psid_123",
+                "secure_1psidts": "fresh_psidts_456",
+                "label": "Test Extension Sync"
+            }
+        )
+        assert r_sync.status_code == 200
+        data = r_sync.json()
+        assert data["success"] is True
+        assert data["action"] in ("created", "updated")
+
+

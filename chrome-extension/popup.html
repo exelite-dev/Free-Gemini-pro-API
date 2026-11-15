@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <title>OmniBridge Sync</title>
+  <style>
+    @import url('https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css');
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Vazirmatn', sans-serif;
+    }
+    body {
+      width: 320px;
+      padding: 16px;
+      background: #0f172a;
+      color: #f8fafc;
+      font-size: 13px;
+    }
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .header h2 {
+      font-size: 15px;
+      font-weight: 700;
+      color: #38bdf8;
+    }
+    .form-group {
+      margin-bottom: 12px;
+    }
+    label {
+      display: block;
+      font-size: 11px;
+      color: #94a3b8;
+      margin-bottom: 4px;
+    }
+    input {
+      width: 100%;
+      padding: 7px 10px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 6px;
+      color: #f8fafc;
+      font-size: 12px;
+      direction: ltr;
+      text-align: left;
+    }
+    input:focus {
+      outline: none;
+      border-color: #38bdf8;
+    }
+    .status-card {
+      background: #1e293b;
+      border-radius: 6px;
+      padding: 10px;
+      margin-bottom: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    .status-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+      font-size: 11px;
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 999px;
+      font-size: 10px;
+      font-weight: 700;
+    }
+    .badge-green { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+    .badge-red { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+    .badge-yellow { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+    button {
+      width: 100%;
+      padding: 9px;
+      background: #2563eb;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #1d4ed8;
+    }
+    button:disabled {
+      background: #475569;
+      cursor: not-allowed;
+    }
+    .footer-note {
+      font-size: 10px;
+      color: #64748b;
+      margin-top: 10px;
+      text-align: center;
+      line-height: 1.4;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div style="font-size: 20px;">⚡</div>
+    <h2>همگام‌ساز خودکار کوکی جمنای</h2>
+  </div>
+
+  <div class="status-card">
+    <div class="status-row">
+      <span>وضعیت اتصال سرور:</span>
+      <span id="sync-badge" class="badge badge-yellow">در حال بررسی...</span>
+    </div>
+    <div class="status-row">
+      <span>آخرین بروزرسانی:</span>
+      <span id="last-sync-time" style="color: #94a3b8; direction: ltr;">-</span>
+    </div>
+  </div>
+
+  <div class="form-group">
+    <label for="server-url">آدرس سرور OmniBridge:</label>
+    <input id="server-url" type="text" placeholder="https://free-gemini-pro-api-me28.onrender.com" />
+  </div>
+
+  <div class="form-group">
+    <label for="api-key">کلید امنیتی API Key:</label>
+    <input id="api-key" type="password" placeholder="sk-omni-..." />
+  </div>
+
+  <button id="sync-btn">🔄 ارسال و سینک فوری کوکی‌ها</button>
+
+  <p class="footer-note">
+    این افزونه کوکی‌های معتبر مرورگر را همیشه به صورت پس‌زمینه و خودکار به سرور Render شما ارسال می‌کند تا هرگز سشن جمنای قطع نشود.
+  </p>
+
+  <script src="popup.js"></script>
+</body>
+</html>

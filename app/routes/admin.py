@@ -174,6 +174,59 @@ async def update_account_route(account_id: int, body: UpdateAccountRequest, requ
     return {"updated": account_id}
 
 
+class SyncGeminiRequest(BaseModel):
+    secure_1psid: str
+    secure_1psidts: str
+    api_key: Optional[str] = None
+    label: Optional[str] = "Chrome Auto-Sync"
+
+
+@router.post("/admin/api/sync-gemini")
+async def sync_gemini_endpoint(body: SyncGeminiRequest, request: Request):
+    """
+    Allow syncing fresh Gemini cookies from browser extension or background daemon.
+    Accepts either an active admin session or an OmniBridge API Key (sk-omni-...).
+    """
+    auth_header = request.headers.get("Authorization", "")
+    api_key_header = request.headers.get("x-api-key") or request.headers.get("anthropic-api-key")
+    token = ""
+    if auth_header.startswith("Bearer "):
+        token = auth_header[7:].strip()
+    elif api_key_header:
+        token = api_key_header.strip()
+
+    is_authenticated = _is_admin(request)
+    if not is_authenticated and token:
+        from app.database import validate_api_key
+        if await validate_api_key(token):
+            is_authenticated = True
+
+    if not is_authenticated:
+        raise HTTPException(status_code=401, detail="Unauthorized: requires admin session or valid API key.")
+
+    credentials: Dict[str, Any] = {
+        "secure_1psid": body.secure_1psid.strip(),
+        "secure_1psidts": body.secure_1psidts.strip(),
+    }
+    if body.api_key:
+        credentials["api_key"] = body.api_key.strip()
+
+    existing_accounts = await list_accounts("gemini")
+    if existing_accounts:
+        target_id = existing_accounts[0]["id"]
+        old_creds = existing_accounts[0].get("credentials", {})
+        if not body.api_key and isinstance(old_creds, dict) and "api_key" in old_creds:
+            credentials["api_key"] = old_creds["api_key"]
+
+        await update_account(target_id, body.label or existing_accounts[0].get("label", "Gemini Sync"), credentials)
+        logger.info("Auto-synced Gemini cookies for account #%d.", target_id)
+        return {"success": True, "action": "updated", "account_id": target_id}
+    else:
+        acct_id = await add_account("gemini", body.label or "Gemini Primary", credentials)
+        logger.info("Auto-registered Gemini account #%d via sync API.", acct_id)
+        return {"success": True, "action": "created", "account_id": acct_id}
+
+
 @router.post("/admin/api/accounts/{account_id}/test")
 async def test_account(account_id: int, request: Request):
     """Perform a real validation call on the account."""
