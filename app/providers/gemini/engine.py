@@ -11,7 +11,7 @@ import json
 import logging
 import re
 import uuid
-from typing import Any, AsyncGenerator, Dict, List, Optional
+from typing import Any, AsyncGenerator, Dict, List, Optional, Union
 
 import base64
 import httpx
@@ -43,6 +43,10 @@ _INIT_URL = "https://gemini.google.com/app"
 
 # ── Model IDs → internal Gemini model header IDs ──────────────────────────────
 _MODEL_HEADERS: Dict[str, Dict[str, str]] = {
+    # Gemini 4 Models & Orchestrator
+    "gemini-argon-orchestrator":     {"x-goog-ext-525001261-jspb": '[1,null,null,null,"9d8ca3786ebdfbea",null,null,0,[4],null,null,1]', "x-goog-ext-73010989-jspb": "[1]", "x-goog-ext-73010990-jspb": "[1]"},
+    "gemini-4-argon":                {"x-goog-ext-525001261-jspb": '[1,null,null,null,"9d8ca3786ebdfbea",null,null,0,[4],null,null,1]', "x-goog-ext-73010989-jspb": "[1]", "x-goog-ext-73010990-jspb": "[1]"},
+    "gemini-4-hydrogen":             {"x-goog-ext-525001261-jspb": '[1,null,null,null,"gemini-2-5-flash",null,null,0,[4],null,null,1]', "x-goog-ext-73010989-jspb": "[0]", "x-goog-ext-73010990-jspb": "[0]"},
     # Antigravity Gemini Models
     "gemini-3.8-flash":              {"x-goog-ext-525001261-jspb": '[1,null,null,null,"gemini-2-5-flash",null,null,0,[4],null,null,1]', "x-goog-ext-73010989-jspb": "[0]", "x-goog-ext-73010990-jspb": "[0]"},
     "gemini-3.7-flash":              {"x-goog-ext-525001261-jspb": '[1,null,null,null,"gemini-2-5-flash",null,null,0,[4],null,null,1]', "x-goog-ext-73010989-jspb": "[0]", "x-goog-ext-73010990-jspb": "[0]"},
@@ -63,6 +67,13 @@ _MODEL_HEADERS: Dict[str, Dict[str, str]] = {
 }
 
 _MODEL_ALIASES: Dict[str, str] = {
+    "argon": "gemini-4-argon",
+    "4-argon": "gemini-4-argon",
+    "hydrogen": "gemini-4-hydrogen",
+    "4-hydrogen": "gemini-4-hydrogen",
+    "orchestrator": "gemini-argon-orchestrator",
+    "argon-orchestrator": "gemini-argon-orchestrator",
+    "leader-worker": "gemini-argon-orchestrator",
     "3.8-flash": "gemini-3.8-flash",
     "3.8": "gemini-3.8-flash",
     "3.7-flash": "gemini-3.7-flash",
@@ -438,10 +449,13 @@ class GeminiEngine(AbstractProvider):
     ) -> str:
         chunks: List[str] = []
         async for chunk in self.stream_chat(request, account_id, credentials):
-            chunks.append(chunk)
+            if isinstance(chunk, str):
+                chunks.append(chunk)
+            elif isinstance(chunk, dict) and "content" in chunk:
+                chunks.append(chunk["content"])
         return "".join(chunks)
 
-    async def stream_chat(
+    async def _stream_single(
         self,
         request: UnifiedRequest,
         account_id: int,
@@ -553,6 +567,74 @@ class GeminiEngine(AbstractProvider):
                 raise
             except Exception as e:
                 raise ProviderError(f"خطا در شبکه جمنای: {e}")
+
+    async def stream_chat(
+        self,
+        request: UnifiedRequest,
+        account_id: int,
+        credentials: Dict[str, Any],
+    ) -> AsyncGenerator[Union[str, Dict[str, Any]], None]:
+        target_model = _MODEL_ALIASES.get(request.model_id, request.model_id)
+        if target_model == "gemini-argon-orchestrator":
+            # ── Multi-Tier Dual Orchestration: Leader (Argon) -> Worker (3.8 Flash) ──
+            yield {"reasoning_content": "⚡ [OmniBridge Orchestrator - Phase 1: Gemini 4 Argon Architecture & Reasoning]\n\n"}
+
+            # 1. Leader Phase: Argon produces architectural plan & complete code
+            leader_messages = [
+                UnifiedMessage(
+                    role="system",
+                    text=(
+                        "You are the Master Software Architect (Gemini 4 Argon Leader). "
+                        "Thoroughly analyze the problem, design the scalable architecture, "
+                        "and write 100% production-ready, complete code with exact file paths and zero placeholders. "
+                        "Provide detailed implementation blueprints for the executor."
+                    )
+                )
+            ] + request.messages
+
+            leader_req = UnifiedRequest(
+                model_id="gemini-4-argon",
+                messages=leader_messages,
+                tools=None,
+                stream=True
+            )
+
+            blueprint_parts: List[str] = []
+            async for chunk in self._stream_single(leader_req, account_id, credentials):
+                blueprint_parts.append(chunk)
+                yield {"reasoning_content": chunk}
+
+            blueprint = "".join(blueprint_parts)
+            yield {"reasoning_content": "\n\n✅ [Phase 1 Complete. Passing Blueprint to Phase 2: Gemini 3.8 Flash Executor]\n\n"}
+
+            # 2. Worker Phase: Gemini 3.8 Flash executes with tools or delivers final output
+            worker_messages = [
+                UnifiedMessage(
+                    role="system",
+                    text=(
+                        "You are the Autonomous Execution Engine (Gemini 3.8 Flash Worker). "
+                        "The Master Architect (Gemini 4 Argon) has produced the verified architectural blueprint below. "
+                        "Your job is to execute and implement this blueprint precisely using your tools (if tools are provided), "
+                        "or deliver the finalized, verified solution.\n\n"
+                        f"[MASTER ARCHITECT BLUEPRINT]:\n{blueprint}"
+                    )
+                )
+            ] + request.messages
+
+            worker_req = UnifiedRequest(
+                model_id="gemini-3.8-flash",
+                messages=worker_messages,
+                tools=request.tools,
+                stream=request.stream
+            )
+
+            async for chunk in self._stream_single(worker_req, account_id, credentials):
+                yield chunk
+            return
+
+        # Regular single-model streaming
+        async for chunk in self._stream_single(request, account_id, credentials):
+            yield chunk
 
     async def validate(self, credentials: Dict[str, Any]) -> bool:
         """Test Gemini credentials with AT token extraction from main page."""

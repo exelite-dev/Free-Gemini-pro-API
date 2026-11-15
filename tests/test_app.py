@@ -328,3 +328,16 @@ def test_env_var_account_seeding(monkeypatch):
         assert any("cg_token_666" in str(a["credentials"]) for a in cg_accts)
 
     asyncio.run(_test())
+
+
+def test_argon_and_orchestrator_models():
+    """Verify Gemini 4 Argon, Hydrogen, and Orchestrator models are properly registered and exposed."""
+    app = create_app()
+    with TestClient(app) as client:
+        r = client.get("/v1/models", headers={"Authorization": "Bearer sk-test"})
+        assert r.status_code == 200
+        model_ids = [m["id"] for m in r.json()["data"]]
+        assert "gemini-4-argon" in model_ids
+        assert "gemini-4-hydrogen" in model_ids
+        assert "gemini-argon-orchestrator" in model_ids
+

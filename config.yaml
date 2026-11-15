@@ -21,6 +21,18 @@ providers:
     request_timeout: 60
     max_retries: 3
     models:
+      - id: "gemini-argon-orchestrator"
+        display_name: "Gemini Argon Orchestrator (Argon Leader + 3.8 Worker)"
+        context_window: 2000000
+        supports_vision: true
+      - id: "gemini-4-argon"
+        display_name: "Gemini 4 Argon (Flagship Architecture & Deep Reasoning)"
+        context_window: 2000000
+        supports_vision: true
+      - id: "gemini-4-hydrogen"
+        display_name: "Gemini 4 Hydrogen (Agentic High-Speed Execution & Coding)"
+        context_window: 1000000
+        supports_vision: true
       - id: "gemini-3.8-flash"
         display_name: "Gemini 3.8 Flash (Antigravity High-Speed)"
         context_window: 1000000
