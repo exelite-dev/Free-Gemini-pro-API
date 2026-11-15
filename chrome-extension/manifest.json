@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "OmniBridge Gemini Auto-Sync",
-  "version": "1.0.0",
-  "description": "Automatically captures and syncs Google Gemini cookies (__Secure-1PSID and __Secure-1PSIDTS) to your OmniBridge proxy.",
+  "name": "OmniBridge Auto-Sync",
+  "version": "1.1.0",
+  "description": "همگام‌سازی خودکار و پس‌زمینه کوکی‌های Google Gemini و توکن‌های ChatGPT به سرور OmniBridge جهت جلوگیری ۱۰۰٪ از سوختن و انقضای سشن‌ها.",
   "permissions": [
     "cookies",
     "storage",
@@ -11,15 +11,27 @@
   "host_permissions": [
     "https://*.google.com/*",
     "https://gemini.google.com/*",
+    "https://chatgpt.com/*",
+    "https://*.chatgpt.com/*",
     "https://*.onrender.com/*",
     "http://localhost:*/*",
     "http://127.0.0.1:*/*"
   ],
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
   "background": {
     "service_worker": "background.js"
   },
   "action": {
     "default_popup": "popup.html",
-    "default_title": "OmniBridge Gemini Auto-Sync"
+    "default_title": "OmniBridge Auto-Sync",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
   }
 }

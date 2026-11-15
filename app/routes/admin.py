@@ -227,6 +227,45 @@ async def sync_gemini_endpoint(body: SyncGeminiRequest, request: Request):
         return {"success": True, "action": "created", "account_id": acct_id}
 
 
+class SyncChatgptRequest(BaseModel):
+    session_token: str
+    label: Optional[str] = "Chrome ChatGPT Sync"
+
+
+@router.post("/admin/api/sync-chatgpt")
+async def sync_chatgpt_endpoint(body: SyncChatgptRequest, request: Request):
+    """Allow syncing fresh ChatGPT session token from browser extension."""
+    auth_header = request.headers.get("Authorization", "")
+    api_key_header = request.headers.get("x-api-key") or request.headers.get("anthropic-api-key")
+    token = ""
+    if auth_header.startswith("Bearer "):
+        token = auth_header[7:].strip()
+    elif api_key_header:
+        token = api_key_header.strip()
+
+    is_authenticated = _is_admin(request)
+    if not is_authenticated and token:
+        from app.database import validate_api_key
+        if await validate_api_key(token):
+            is_authenticated = True
+
+    if not is_authenticated:
+        raise HTTPException(status_code=401, detail="Unauthorized: requires admin session or valid API key.")
+
+    credentials = {"session_token": body.session_token.strip()}
+    existing_accounts = await list_accounts("chatgpt")
+    if existing_accounts:
+        target_id = existing_accounts[0]["id"]
+        await update_account(target_id, body.label or existing_accounts[0].get("label", "ChatGPT Sync"), credentials)
+        logger.info("Auto-synced ChatGPT token for account #%d.", target_id)
+        return {"success": True, "action": "updated", "account_id": target_id}
+    else:
+        acct_id = await add_account("chatgpt", body.label or "ChatGPT Primary", credentials)
+        logger.info("Auto-registered ChatGPT account #%d via sync API.", acct_id)
+        return {"success": True, "action": "created", "account_id": acct_id}
+
+
+
 @router.post("/admin/api/accounts/{account_id}/test")
 async def test_account(account_id: int, request: Request):
     """Perform a real validation call on the account."""
