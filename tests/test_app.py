@@ -366,3 +366,58 @@ def test_sync_gemini_endpoint():
         assert data["action"] in ("created", "updated")
 
 
+def test_agenting_tool_calls_parsing_and_execution():
+    """Verify tool call extraction, schema propagation, and multi-turn agent flow."""
+    from app.routes.openai import _parse_emulated_tool_call, _extract_json_objects
+
+    # 1. Test parsing of single tool call with nested parameters
+    raw_single = 'Here is the tool call:\n```json\n{"name": "edit_file", "arguments": {"path": "main.py", "content": "print(1)"}}\n```'
+    parsed_single = _parse_emulated_tool_call(raw_single)
+    assert parsed_single is not None
+    assert len(parsed_single) == 1
+    assert parsed_single[0]["function"]["name"] == "edit_file"
+    args = json.loads(parsed_single[0]["function"]["arguments"])
+    assert args["path"] == "main.py"
+
+    # 2. Test parsing of tool_calls array format
+    raw_array = '```json\n{"tool_calls": [{"id": "call_123", "type": "function", "function": {"name": "run_command", "arguments": "{\\"command\\": \\"pytest\\"}"}}]}\n```'
+    parsed_array = _parse_emulated_tool_call(raw_array)
+    assert parsed_array is not None
+    assert parsed_array[0]["function"]["name"] == "run_command"
+    assert "pytest" in parsed_array[0]["function"]["arguments"]
+
+    # 3. Test parsing without markdown backticks (raw balanced JSON)
+    raw_bare = 'I will now run the command: {"name": "read_file", "arguments": {"path": "config.yaml"}}'
+    parsed_bare = _parse_emulated_tool_call(raw_bare)
+    assert parsed_bare is not None
+    assert parsed_bare[0]["function"]["name"] == "read_file"
+
+    # 4. Test openai_request_to_unified with tools and tool outputs
+    from app.models import ChatCompletionRequest, ChatMessage, openai_request_to_unified
+    req = ChatCompletionRequest(
+        model="gemini-3.8-flash",
+        messages=[
+            ChatMessage(role="user", content="Read the config file"),
+            ChatMessage(role="assistant", content=None, tool_calls=[
+                {"id": "call_1", "type": "function", "function": {"name": "read_file", "arguments": "{\"path\": \"config.yaml\"}"}}
+            ]),
+            ChatMessage(role="tool", tool_call_id="call_1", content="server: host=0.0.0.0"),
+        ],
+        tools=[{
+            "type": "function",
+            "function": {
+                "name": "read_file",
+                "description": "Read contents of a file",
+                "parameters": {"type": "object", "properties": {"path": {"type": "string"}}}
+            }
+        }]
+    )
+    unified = openai_request_to_unified(req, "gemini")
+    # Verify tools schema was injected into system message
+    assert any("AVAILABLE TOOLS" in m.text for m in unified.messages)
+    assert any("read_file" in m.text for m in unified.messages)
+    # Verify tool output was preserved in context
+    assert any("TOOL OUTPUT for call_1" in m.text for m in unified.messages)
+
+
+

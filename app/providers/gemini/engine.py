@@ -364,13 +364,28 @@ class GeminiEngine(AbstractProvider):
         payload = {"contents": contents}
         if system_instruction:
             payload["systemInstruction"] = system_instruction
-            
+
+        if request.tools:
+            function_declarations = []
+            for t in request.tools:
+                if t.get("type") == "function" and "function" in t:
+                    fn = t["function"]
+                    decl = {
+                        "name": fn.get("name", ""),
+                        "description": fn.get("description", ""),
+                    }
+                    if "parameters" in fn:
+                        decl["parameters"] = fn["parameters"]
+                    function_declarations.append(decl)
+            if function_declarations:
+                payload["tools"] = [{"function_declarations": function_declarations}]
+
         gen_config = {}
         if request.temperature is not None:
             gen_config["temperature"] = request.temperature
         if request.max_tokens is not None:
             gen_config["maxOutputTokens"] = request.max_tokens
-            
+
         if gen_config:
             payload["generationConfig"] = gen_config
 
@@ -395,7 +410,7 @@ class GeminiEngine(AbstractProvider):
 
         model_name = _map_api_model_id(request.model_id)
         url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:streamGenerateContent?key={api_key}&alt=sse"
-        
+
         payload = await self._build_api_payload(request)
 
         async with AsyncSession(timeout=self.request_timeout) as client:
@@ -406,7 +421,7 @@ class GeminiEngine(AbstractProvider):
                     headers={"Content-Type": "application/json"},
                     stream=True,
                 )
-                
+
                 if resp.status_code == 400:
                     raise ProviderError(f"Bad Request: {resp.text}", retry=False)
                 elif resp.status_code in (401, 403):
@@ -431,8 +446,22 @@ class GeminiEngine(AbstractProvider):
                             candidates = data.get("candidates", [])
                             if candidates:
                                 parts = candidates[0].get("content", {}).get("parts", [])
-                                if parts and "text" in parts[0]:
-                                    yield parts[0]["text"]
+                                for p in parts:
+                                    if "text" in p:
+                                        yield p["text"]
+                                    elif "functionCall" in p:
+                                        fc = p["functionCall"]
+                                        call_obj = {
+                                            "tool_calls": [{
+                                                "id": f"call_{uuid.uuid4().hex[:8]}",
+                                                "type": "function",
+                                                "function": {
+                                                    "name": fc.get("name", ""),
+                                                    "arguments": fc.get("args", {})
+                                                }
+                                            }]
+                                        }
+                                        yield "```json\n" + json.dumps(call_obj, ensure_ascii=False) + "\n```"
                         except json.JSONDecodeError:
                             pass
                             
@@ -479,6 +508,8 @@ class GeminiEngine(AbstractProvider):
                 parts.append(msg.text)
             elif msg.role == "assistant":
                 parts.append(f"[Assistant]: {msg.text}")
+            elif msg.role in ("tool", "function"):
+                parts.append(f"[Tool Output]: {msg.text}")
         prompt = "\n\n".join(parts)
         if system_prompt:
             prompt = f"{system_prompt}\n\n{prompt}"

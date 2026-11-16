@@ -238,20 +238,27 @@ class UnifiedRequest(BaseModel):
 def openai_request_to_unified(req: ChatCompletionRequest, provider: str) -> UnifiedRequest:
     msgs = []
     for m in req.messages:
-        if m.role == "tool" and m.tool_call_id:
+        if m.role in ("tool", "function"):
+            tool_id = m.name or m.tool_call_id or "tool"
             msgs.append(UnifiedMessage(
                 role="user",
-                text=f"--- TOOL RESULT FOR {m.name or m.tool_call_id} ---\n{m.get_text()}\n----------------------\n\nAnalyze the tool result and continue following your main system instructions."
+                text=f"[TOOL OUTPUT for {tool_id}]:\n{m.get_text()}\n[END TOOL OUTPUT]\nAnalyze this tool output and proceed with the task."
             ))
         elif m.role == "assistant" and m.tool_calls:
             calls_list = []
             for tc in m.tool_calls:
+                args_val = tc.function.arguments
+                if isinstance(args_val, str):
+                    try:
+                        args_val = json.loads(args_val)
+                    except Exception:
+                        pass
                 calls_list.append({
                     "id": tc.id,
                     "type": "function",
                     "function": {
                         "name": tc.function.name,
-                        "arguments": tc.function.arguments
+                        "arguments": args_val
                     }
                 })
             calls_text = "```json\n" + json.dumps({"tool_calls": calls_list}, ensure_ascii=False, indent=2) + "\n```"
@@ -271,23 +278,29 @@ def openai_request_to_unified(req: ChatCompletionRequest, provider: str) -> Unif
     if req.tools:
         tools_str = json.dumps([t for t in req.tools], ensure_ascii=False, indent=2)
         tool_prompt = (
-            "You are an expert AI agent. You have access to tools.\n"
-            "Whenever you decide to use a tool (including tools to talk to the user or finish tasks), you MUST output a JSON block in exactly the following format. "
-            "Do NOT output any conversational text outside the JSON block.\n"
+            "You are an advanced AI agent with access to external tools.\n\n"
+            "# AVAILABLE TOOLS (JSON Schema):\n"
+            "```json\n"
+            f"{tools_str}\n"
+            "```\n\n"
+            "# TOOL CALLING INSTRUCTIONS:\n"
+            "1. If you need to perform an action using tools, you MUST output a JSON block in a ```json markdown block containing a 'tool_calls' array:\n"
             "```json\n"
             "{\n"
             '  "tool_calls": [\n'
             '    {\n'
-            '      "id": "call_abc123",\n'
+            '      "id": "call_123456",\n'
             '      "type": "function",\n'
             '      "function": {\n'
-            '        "name": "tool_name",\n'
-            '        "arguments": "{\\"arg1\\": \\"value1\\"}"\n'
+            '        "name": "exact_tool_name",\n'
+            '        "arguments": {"arg1": "value1"}\n'
             '      }\n'
             '    }\n'
             '  ]\n'
             "}\n"
-            "```\n\n"
+            "```\n"
+            "2. If you are directly answering the user and no tool call is needed, reply normally in natural language.\n"
+            "3. When calling a tool, use the exact tool name and valid arguments matching its parameter schema.\n"
         )
         # Prepend to the first system message, or insert as first message
         if msgs and msgs[0].role == "system":

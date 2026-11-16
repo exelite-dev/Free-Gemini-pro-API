@@ -141,10 +141,19 @@ class ChatGPTEngine(AbstractProvider):
         if request.messages:
             history = []
             for m in request.messages[:-1]:
-                history.append(f"{m.role.capitalize()}: {m.text}")
+                if m.role == "assistant":
+                    history.append(f"Assistant: {m.text}")
+                elif m.role in ("tool", "function"):
+                    history.append(f"Tool Output: {m.text}")
+                elif m.role == "system":
+                    history.append(f"System: {m.text}")
+                else:
+                    history.append(f"User: {m.text}")
             last_msg = request.messages[-1].text
+            last_role = request.messages[-1].role
+            prefix = "Tool Output" if last_role in ("tool", "function") else last_role.capitalize()
             if history:
-                prompt = "\n\n".join(history) + f"\n\nUser: {last_msg}"
+                prompt = "\n\n".join(history) + f"\n\n{prefix}: {last_msg}"
             else:
                 prompt = last_msg
         else:

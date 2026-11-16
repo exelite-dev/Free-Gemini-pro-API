@@ -53,15 +53,126 @@ async def _get_provider_for_model(model_id: str) -> str:
     return model_def.provider
 
 
+def _normalize_single_tool_call(item: Any) -> dict | None:
+    if not isinstance(item, dict):
+        return None
+    call_id = item.get("id") or f"call_{uuid.uuid4().hex[:8]}"
+
+    # Format A: {"function": {"name": ..., "arguments": ...}}
+    if "function" in item and isinstance(item["function"], dict):
+        fn = item["function"]
+        name = fn.get("name", "")
+        args = fn.get("arguments", "{}")
+    # Format B: {"name": ..., "arguments": ...} or {"name": ..., "parameters": ...}
+    elif "name" in item:
+        name = item.get("name", "")
+        args = item.get("arguments") or item.get("parameters") or "{}"
+    else:
+        return None
+
+    if not name or not isinstance(name, str):
+        return None
+
+    if isinstance(args, (dict, list)):
+        args = json.dumps(args, ensure_ascii=False)
+    elif not isinstance(args, str):
+        args = "{}"
+
+    return {
+        "id": call_id,
+        "type": "function",
+        "function": {
+            "name": name.strip(),
+            "arguments": args
+        }
+    }
+
+
+def _extract_json_objects(text: str) -> list:
+    """Extract all valid JSON objects/arrays from text using balanced bracket matching."""
+    candidates = []
+    # 1. First try markdown blocks ```(?:json)? ... ```
+    for m in re.finditer(r'```(?:json)?\s*([\s\S]*?)\s*```', text):
+        block = m.group(1).strip()
+        try:
+            parsed = json.loads(block)
+            candidates.append(parsed)
+        except Exception:
+            pass
+
+    # 2. Balanced bracket scan
+    for start_char, end_char in [('{', '}'), ('[', ']')]:
+        i = 0
+        while i < len(text):
+            if text[i] == start_char:
+                depth = 0
+                in_string = False
+                escape = False
+                start_pos = i
+                for j in range(i, len(text)):
+                    c = text[j]
+                    if escape:
+                        escape = False
+                        continue
+                    if c == '\\':
+                        escape = True
+                        continue
+                    if c == '"':
+                        in_string = not in_string
+                        continue
+                    if not in_string:
+                        if c == start_char:
+                            depth += 1
+                        elif c == end_char:
+                            depth -= 1
+                            if depth == 0:
+                                substr = text[start_pos:j+1].strip()
+                                try:
+                                    parsed = json.loads(substr)
+                                    if parsed not in candidates:
+                                        candidates.append(parsed)
+                                except Exception:
+                                    pass
+                                i = j
+                                break
+                i += 1
+            else:
+                i += 1
+    return candidates
+
+
 def _parse_emulated_tool_call(text: str) -> list | None:
-    match = re.search(r'```(?:json)?\s*(\{.*?\})\s*```', text, re.DOTALL)
-    json_str = match.group(1) if match else text.strip()
-    try:
-        data = json.loads(json_str)
-        if isinstance(data, dict) and "tool_calls" in data:
-            return data["tool_calls"]
-    except Exception:
-        pass
+    if not text:
+        return None
+
+    candidates = _extract_json_objects(text)
+    for data in candidates:
+        # Case 1: {"tool_calls": [...]}
+        if isinstance(data, dict) and "tool_calls" in data and isinstance(data["tool_calls"], list):
+            norm_calls = []
+            for tc in data["tool_calls"]:
+                norm = _normalize_single_tool_call(tc)
+                if norm:
+                    norm_calls.append(norm)
+            if norm_calls:
+                return norm_calls
+
+        # Case 2: List of tool calls: [{"name": ..., "arguments": ...}] or [{"function": ...}]
+        elif isinstance(data, list) and data:
+            norm_calls = []
+            for item in data:
+                norm = _normalize_single_tool_call(item)
+                if norm:
+                    norm_calls.append(norm)
+            if norm_calls:
+                return norm_calls
+
+        # Case 3: Single tool call: {"name": ..., "arguments": ...}
+        elif isinstance(data, dict) and ("name" in data or "function" in data):
+            norm = _normalize_single_tool_call(data)
+            if norm:
+                return [norm]
+
     return None
 
 # ── GET /v1/models ─────────────────────────────────────────────────────────────
