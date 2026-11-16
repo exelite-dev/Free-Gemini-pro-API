@@ -8,6 +8,7 @@
 
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.111+-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![تست‌ها](https://img.shields.io/badge/%D8%AA%D8%B3%D8%AA%E2%80%8C%D9%87%D8%A7-59%2F59%20%D9%BE%D8%A7%D8%B3%20%D8%B4%D8%AF%D9%87-brightgreen?style=flat-square&logo=pytest)](tests/test_app.py)
 [![Telegram](https://img.shields.io/badge/Telegram-Config__Vortex55-blue?style=flat-square&logo=telegram)](https://t.me/Config_Vortex55)
 [![مجوز](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat-square&logo=docker&logoColor=white)](Dockerfile)
@@ -31,16 +32,20 @@
 | ویژگی | جزئیات |
 |--------|---------|
 | 🌐 **موتور چند-پروایدر** | اتصال همزمان به **Google Gemini**, **DeepSeek (V3 & R1)** و **ChatGPT** |
+| 🧩 **افزونه اختصاصی کروم** | همگام‌سازی خودکار و لحظه‌ای کوکی‌ها جهت رفع دائمی باطل شدن نشست‌ها |
+| 👑 **مدل‌های آرگون و هیدروژن** | پشتیبانی از Gemini 4 Argon، مدل Hydrogen و معماری ارکستریتور لیدر-ورکر |
+| 🛠️ **پشتیبانی ایجنتیک از ابزارها** | پارس هوشمند براکت‌ها و تزریق کامل JSON Schema جهت فراخوانی چندمرحله‌ای ابزارها |
 | 🧠 **حل‌کننده خودکار PoW** | حل‌کننده اختصاصی ۲۳ راند Keccak-f[1600] پایتون برای چالش‌های `DeepSeekHashV1` |
 | 💡 **استریم فرآیند تفکر** | ارسال زنده توکن‌های استدلال (`reasoning_content`) برای DeepSeek-R1 و Gemini Extended |
 | 🤝 **سازگار با OpenAI** | جایگزین کامل برای `POST /v1/chat/completions` و `GET /v1/models` |
-| 🔶 **سازگار با Anthropic** | پشتیبانی کامل از `POST /anthropic/v1/messages` |
+| 🔶 **سازگار با Anthropic** | پشتیبانی دوگانه از اندپوینت‌های استاندارد `POST /v1/messages` و `POST /anthropic/v1/messages` |
 | 🌊 **استریم بلادرنگ** | ارسال توکن‌به‌توکن (SSE) روی تمام endpoint‌ها با حفظ کامل فاصله‌ها و فرمت‌ها |
 | 🔒 **جعل اثرانگشت TLS** | شبیه‌سازی Chrome-120 با `curl-cffi` برای دور زدن bot-detection |
 | 🔄 **استخر اکانت‌ها** | توزیع بار Round-Robin با Cooldown خودکار بین اکانت‌های متعدد |
 | 🍪 **تمدید خودکار نشست** | وظیفه پس‌زمینه برای تمدید خودکار و هوشمند کوکی‌ها |
 | 🗝️ **احراز هویت کلید API** | ساخت و لغو کلیدهای `sk-omni-...` با لاگ کامل |
 | 📊 **داشبورد مدیریت فارسی** | رابط کاربری مدرن تیره با افکت شیشه‌ای، نمودار ترافیک و زمین بازی چت |
+| 🧪 **۵۹ تست خودکار** | پوشش ۱۰۰٪ تست‌های دترمینستیک (`59/59 پاس شده`) در تمام اندپوینت‌ها |
 | 🖼️ **چندوجهی (Multimodal)** | ورودی تصویر برای مدل‌های Gemini Vision |
 | 🐋 **آماده Docker** | Dockerfile چندمرحله‌ای + compose + Render Blueprint |
 

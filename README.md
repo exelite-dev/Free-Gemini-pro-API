@@ -19,6 +19,7 @@ pinned: false
 
 [![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=flat-square&logo=python&logoColor=white)](https://python.org)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.111+-009688?style=flat-square&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com)
+[![Tests](https://img.shields.io/badge/Tests-59%2F59%20Passed-brightgreen?style=flat-square&logo=pytest)](tests/test_app.py)
 [![Telegram](https://img.shields.io/badge/Telegram-Config__Vortex55-blue?style=flat-square&logo=telegram)](https://t.me/Config_Vortex55)
 [![License](https://img.shields.io/badge/License-MIT-green?style=flat-square)](LICENSE)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED?style=flat-square&logo=docker&logoColor=white)](Dockerfile)
@@ -44,16 +45,20 @@ pinned: false
 | Feature | Details |
 |---------|---------|
 | 🌐 **Multi-Provider Engine** | Seamlessly proxy **Google Gemini**, **DeepSeek (V3 & R1)**, and **ChatGPT** |
+| 🧩 **Chrome Extension** | Auto-Sync Chrome Extension for zero-maintenance Gemini & ChatGPT cookie rotation |
+| 👑 **Gemini 4 Argon & Hydrogen** | Support for Gemini 4 Argon (Experimental), Hydrogen, and Dual-Tier Leader-Worker orchestration |
+| 🛠️ **Agentic Tool Calling** | Robust bracket parsing & full JSON Schema injection for multi-turn AI tool calling |
 | 🧠 **DeepSeek PoW Solver** | Pure-Python 23-round Keccak-f[1600] solver handles `DeepSeekHashV1` automatically |
 | 💡 **Reasoning Stream** | Real-time `reasoning_content` thinking tokens for DeepSeek-R1 and Gemini Extended |
 | 🤝 **OpenAI Compatible** | Drop-in replacement for `POST /v1/chat/completions` and `GET /v1/models` |
-| 🔶 **Anthropic Compatible** | Full `POST /anthropic/v1/messages` support |
+| 🔶 **Anthropic Compatible** | Dual `POST /v1/messages` and `POST /anthropic/v1/messages` support |
 | 🌊 **Real-time Streaming** | Token-by-token SSE streaming preserving 100% of formatting, indentation, and spaces |
 | 🔒 **TLS Fingerprinting** | `curl-cffi` Chrome-120 impersonation — bypasses bot detection |
 | 🔄 **Account Pooling** | Round-robin load balancing + automatic cooldown failover across all accounts |
 | 🍪 **Cookie Auto-Refresh** | Background task validates & refreshes session cookies automatically |
 | 🗝️ **API Key Auth** | Generate/revoke `sk-omni-...` keys with full audit trail |
 | 📊 **Admin Dashboard** | Glassmorphic dark-mode Persian UI with live traffic charts and playground |
+| 🧪 **59 Automated Tests** | 100% passing test coverage (`59/59`) across routes, engines, tool calling, and proxies |
 | 🖼️ **Multi-modal** | Image input support via Gemini Vision models |
 | 🐋 **Docker Ready** | Multi-stage Dockerfile + compose + Render Blueprint |
 
