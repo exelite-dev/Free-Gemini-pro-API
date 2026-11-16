@@ -179,7 +179,12 @@ def _parse_emulated_tool_call(text: str) -> list | None:
 
 @router.get("/v1/models")
 async def list_models(_key: str = Depends(require_api_key)):
-    models = settings.get_all_models()
+    states = await get_all_provider_states()
+    models = settings.get_all_models(
+        gemini_enabled=states.get("gemini", settings.gemini_enabled),
+        deepseek_enabled=states.get("deepseek", settings.deepseek_enabled),
+        chatgpt_enabled=states.get("chatgpt", settings.chatgpt_enabled),
+    )
     return {
         "object": "list",
         "data": [m.to_openai_dict() for m in models],

@@ -420,4 +420,642 @@ def test_agenting_tool_calls_parsing_and_execution():
     assert any("TOOL OUTPUT for call_1" in m.text for m in unified.messages)
 
 
+# ── Additional Comprehensive Tests (Target: 56+ Total Tests) ─────────────────
+
+def test_anthropic_v1_messages_endpoint():
+    from app.providers.registry import register_provider
+    app = create_app()
+    with TestClient(app) as client:
+        engine = DummyProvider()
+        register_provider("gemini", engine)
+        r = client.post(
+            "/v1/messages",
+            headers={"x-api-key": "sk-test"},
+            json={
+                "model": "gemini-3.8-flash",
+                "messages": [{"role": "user", "content": "Hello Anthropic"}],
+                "stream": False
+            }
+        )
+        assert r.status_code == 200
+        data = r.json()
+        assert data["type"] == "message"
+        assert len(data["content"]) > 0
+        assert "Hello Anthropic" in data["content"][0]["text"]
+
+
+def test_anthropic_custom_prefix_messages_endpoint():
+    from app.providers.registry import register_provider
+    app = create_app()
+    with TestClient(app) as client:
+        engine = DummyProvider()
+        register_provider("deepseek", engine)
+        r = client.post(
+            "/anthropic/v1/messages",
+            headers={"Authorization": "Bearer sk-test"},
+            json={
+                "model": "deepseek-chat",
+                "messages": [{"role": "user", "content": "Test Prefix"}],
+                "stream": False
+            }
+        )
+        assert r.status_code == 200
+        assert r.json()["type"] == "message"
+
+
+def test_anthropic_streaming_sse_events():
+    from app.providers.registry import register_provider
+    app = create_app()
+    with TestClient(app) as client:
+        engine = DummyProvider()
+        register_provider("gemini", engine)
+        r = client.post(
+            "/v1/messages",
+            headers={"x-api-key": "sk-test"},
+            json={
+                "model": "gemini-3.8-flash",
+                "messages": [{"role": "user", "content": "Stream Anthropic"}],
+                "stream": True
+            }
+        )
+        assert r.status_code == 200
+        text = r.text
+        assert "event: message_start" in text
+        assert "event: content_block_start" in text
+        assert "event: content_block_delta" in text
+        assert "event: message_delta" in text
+        assert "event: message_stop" in text
+
+
+def test_anthropic_missing_model_404():
+    app = create_app()
+    with TestClient(app) as client:
+        r = client.post(
+            "/v1/messages",
+            headers={"x-api-key": "sk-test"},
+            json={
+                "model": "non-existent-model-xyz",
+                "messages": [{"role": "user", "content": "Hello"}],
+            }
+        )
+        assert r.status_code == 404
+
+
+def test_anthropic_provider_disabled_503():
+    from app.database import set_provider_enabled
+    asyncio.run(set_provider_enabled("chatgpt", False))
+    app = create_app()
+    with TestClient(app) as client:
+        r = client.post(
+            "/v1/messages",
+            headers={"x-api-key": "sk-test"},
+            json={
+                "model": "gpt-4o",
+                "messages": [{"role": "user", "content": "Hello"}],
+            }
+        )
+        assert r.status_code == 503
+    asyncio.run(set_provider_enabled("chatgpt", True))
+
+
+def test_sync_chatgpt_endpoint():
+    app = create_app()
+    with TestClient(app) as client:
+        # Unauthorized
+        r_unauth = client.post("/admin/api/sync-chatgpt", json={"session_token": "token123"})
+        assert r_unauth.status_code == 401
+
+        # Authorized
+        r_sync = client.post(
+            "/admin/api/sync-chatgpt",
+            headers={"Authorization": "Bearer sk-test"},
+            json={"session_token": "token_xyz_fresh", "label": "Extension ChatGPT"}
+        )
+        assert r_sync.status_code == 200
+        assert r_sync.json()["success"] is True
+
+
+def test_sync_gemini_preserves_existing_api_key():
+    async def _test():
+        acct_id = await add_account("gemini", "Gemini Key Account", {
+            "secure_1psid": "old_psid",
+            "secure_1psidts": "old_psidts",
+            "api_key": "AIzaSySecretApiKey"
+        })
+        app = create_app()
+        with TestClient(app) as client:
+            r = client.post(
+                "/admin/api/sync-gemini",
+                headers={"Authorization": "Bearer sk-test"},
+                json={
+                    "secure_1psid": "new_psid_rotated",
+                    "secure_1psidts": "new_psidts_rotated"
+                }
+            )
+            assert r.status_code == 200
+            accts = await list_accounts("gemini")
+            target = next(a for a in accts if a["id"] == acct_id)
+            assert target["credentials"]["secure_1psid"] == "new_psid_rotated"
+            assert target["credentials"]["api_key"] == "AIzaSySecretApiKey"
+    asyncio.run(_test())
+
+
+def test_admin_auth_check_unauthenticated():
+    app = create_app()
+    with TestClient(app) as client:
+        r = client.get("/admin/api/auth-check")
+        assert r.status_code == 200
+        assert r.json()["authenticated"] is False
+
+
+def test_admin_provider_toggle_endpoints():
+    app = create_app()
+    with TestClient(app) as client:
+        # Without admin session, throws 401
+        r = client.post("/admin/api/providers/gemini/toggle", json={"enabled": False})
+        assert r.status_code == 401
+
+
+def test_admin_account_crud_unauthorized():
+    app = create_app()
+    with TestClient(app) as client:
+        assert client.get("/admin/api/accounts").status_code == 401
+        assert client.post("/admin/api/accounts", json={"provider": "gemini", "label": "test", "credentials": {}}).status_code == 401
+        assert client.delete("/admin/api/accounts/1").status_code == 401
+
+
+def test_deepseek_token_unwrapping():
+    from app.providers.deepseek.engine import DeepSeekEngine
+    engine = DeepSeekEngine()
+    # 1. Plain string
+    assert engine._extract_token("token_abc") == "token_abc"
+    # 2. JSON string with "value"
+    json_str = '{"value": "extracted_jwt_token_123", "__version": "0"}'
+    assert engine._extract_token(json_str) == "extracted_jwt_token_123"
+    # 3. Dict with userToken
+    assert engine._extract_token({"userToken": "my_user_token"}) == "my_user_token"
+    # 4. Dict with value
+    assert engine._extract_token({"value": "dict_val"}) == "dict_val"
+
+
+def test_chatgpt_token_extraction():
+    from app.providers.chatgpt.engine import ChatGPTEngine
+    engine = ChatGPTEngine()
+    # 1. Plain string
+    assert engine._extract_session_token("sess_token") == "sess_token"
+    # 2. Dict with session_token
+    assert engine._extract_session_token({"session_token": "sess_1"}) == "sess_1"
+    # 3. Dict with accessToken
+    assert engine._extract_session_token({"accessToken": "acc_1"}) == "acc_1"
+    # 4. Dict with token
+    assert engine._extract_session_token({"token": "tok_1"}) == "tok_1"
+
+
+def test_chatgpt_model_mapping():
+    from app.providers.chatgpt.engine import ChatGPTEngine
+    engine = ChatGPTEngine()
+    assert engine._map_model("gpt-4o") == "gpt-4o"
+    assert engine._map_model("gpt-4o-mini") == "gpt-4o-mini"
+    assert engine._map_model("o1-mini") == "o1-mini"
+    assert engine._map_model("o3-mini") == "o3-mini"
+    assert engine._map_model("o1-preview") == "o1"
+    assert engine._map_model("custom-auto") == "auto"
+
+
+def test_gemini_model_aliases():
+    from app.providers.gemini.engine import _MODEL_ALIASES
+    assert _MODEL_ALIASES["argon"] == "gemini-4-argon"
+    assert _MODEL_ALIASES["hydrogen"] == "gemini-4-hydrogen"
+    assert _MODEL_ALIASES["orchestrator"] == "gemini-argon-orchestrator"
+    assert _MODEL_ALIASES["3.8"] == "gemini-3.8-flash"
+    assert _MODEL_ALIASES["thinking"] == "gemini-2.0-flash-thinking-exp"
+
+
+def test_gemini_model_headers_presence():
+    from app.providers.gemini.engine import _get_model_headers
+    h_argon = _get_model_headers("gemini-4-argon")
+    assert "x-goog-ext-525001261-jspb" in h_argon
+    assert h_argon["x-goog-ext-73010989-jspb"] == "[1]"  # Extended thinking
+
+    h_hydro = _get_model_headers("gemini-4-hydrogen")
+    assert "x-goog-ext-525001261-jspb" in h_hydro
+
+    h_orch = _get_model_headers("gemini-argon-orchestrator")
+    assert h_orch["x-goog-ext-73010989-jspb"] == "[1]"
+
+
+def test_gemini_cookie_header_builder():
+    from app.providers.gemini.engine import _build_cookie_header
+    creds1 = {"secure_1psid": "psid_val", "secure_1psidts": "sidts_val"}
+    h1 = _build_cookie_header(creds1)
+    assert "__Secure-1PSID=psid_val" in h1
+    assert "__Secure-1PSIDTS=sidts_val" in h1
+
+    # Alternative key names
+    creds2 = {"__Secure-1PSID": "p2", "__Secure-1PSIDTS": "ts2"}
+    h2 = _build_cookie_header(creds2)
+    assert "__Secure-1PSID=p2" in h2
+    assert "__Secure-1PSIDTS=ts2" in h2
+
+
+def test_tool_call_normalization_edge_cases():
+    from app.routes.openai import _normalize_single_tool_call
+    # 1. Non-dict input
+    assert _normalize_single_tool_call("not a dict") is None
+    # 2. Missing name
+    assert _normalize_single_tool_call({"arguments": "{}"}) is None
+    # 3. Format B with parameters key and list arguments
+    res = _normalize_single_tool_call({
+        "name": "batch_run",
+        "parameters": ["cmd1", "cmd2"]
+    })
+    assert res is not None
+    assert res["function"]["name"] == "batch_run"
+    assert json.loads(res["function"]["arguments"]) == ["cmd1", "cmd2"]
+
+
+def test_tool_call_with_persian_arguments():
+    from app.routes.openai import _parse_emulated_tool_call
+    raw = '''```json
+    {
+        "name": "send_notification",
+        "arguments": {
+            "message": "سلام به دنیای هوش مصنوعی",
+            "priority": "فوری"
+        }
+    }
+    ```'''
+    parsed = _parse_emulated_tool_call(raw)
+    assert parsed is not None
+    args = json.loads(parsed[0]["function"]["arguments"])
+    assert "سلام به دنیای هوش مصنوعی" in args["message"]
+    assert args["priority"] == "فوری"
+
+
+def test_tool_call_malformed_json_recovery():
+    from app.routes.openai import _parse_emulated_tool_call
+    broken = "```json\n{ broken json without quotes: 123 \n```"
+    assert _parse_emulated_tool_call(broken) is None
+    assert _parse_emulated_tool_call("") is None
+
+
+def test_database_busy_timeout_pragma():
+    from app.database import get_db
+    async def _test():
+        async with get_db() as db:
+            async with db.execute("PRAGMA busy_timeout;") as cur:
+                row = await cur.fetchone()
+                assert row[0] >= 5000
+    asyncio.run(_test())
+
+
+def test_database_metrics_recording_and_summary():
+    from app.database import record_metric, get_metrics_summary
+    async def _test():
+        await record_metric("gemini", "gemini-3.8-flash", True, 150.0, 100, 200)
+        await record_metric("gemini", "gemini-3.8-flash", False, 0.0)
+        summary = await get_metrics_summary(since_seconds=3600)
+        assert summary["total"] >= 2
+        assert "providers" in summary
+    asyncio.run(_test())
+
+
+def test_database_mask_credentials():
+    from app.database import _mask_credentials
+    masked = _mask_credentials({
+        "secure_1psid": "g.a000abcdef1234567890",
+        "short": "1234"
+    })
+    assert "g.a0" in masked["secure_1psid"]
+    assert "7890" in masked["secure_1psid"]
+    assert "*" in masked["secure_1psid"]
+    assert masked["short"] == "****"
+
+
+def test_openai_chat_completions_invalid_api_key():
+    app = create_app()
+    with TestClient(app) as client:
+        r = client.post(
+            "/v1/chat/completions",
+            headers={"Authorization": "Bearer sk-invalid-key-999"},
+            json={
+                "model": "gemini-3.8-flash",
+                "messages": [{"role": "user", "content": "Hello"}],
+            }
+        )
+        assert r.status_code == 401
+
+
+def test_openai_chat_completions_unknown_model_404():
+    app = create_app()
+    with TestClient(app) as client:
+        r = client.post(
+            "/v1/chat/completions",
+            headers={"Authorization": "Bearer sk-test"},
+            json={
+                "model": "model-does-not-exist",
+                "messages": [{"role": "user", "content": "Hello"}],
+            }
+        )
+        assert r.status_code == 404
+
+
+def test_openai_chat_completions_provider_disabled_503():
+    from app.database import set_provider_enabled
+    asyncio.run(set_provider_enabled("deepseek", False))
+    app = create_app()
+    with TestClient(app) as client:
+        r = client.post(
+            "/v1/chat/completions",
+            headers={"Authorization": "Bearer sk-test"},
+            json={
+                "model": "deepseek-chat",
+                "messages": [{"role": "user", "content": "Hello"}],
+            }
+        )
+        assert r.status_code == 503
+    asyncio.run(set_provider_enabled("deepseek", True))
+
+
+def test_openai_models_endpoint_filtering():
+    from app.database import set_provider_enabled
+    asyncio.run(set_provider_enabled("chatgpt", False))
+    app = create_app()
+    with TestClient(app) as client:
+        r = client.get("/v1/models", headers={"Authorization": "Bearer sk-test"})
+        assert r.status_code == 200
+        model_ids = [m["id"] for m in r.json()["data"]]
+        assert "gpt-4o" not in model_ids
+        assert "gemini-3.8-flash" in model_ids
+    asyncio.run(set_provider_enabled("chatgpt", True))
+
+
+def test_rate_limit_error_exception_status():
+    from app.providers.base import RateLimitError
+    e = RateLimitError("Rate limit reached")
+    assert e.status_code == 429
+    assert e.retry is True
+
+
+def test_auth_error_exception_status():
+    from app.providers.base import AuthError
+    e = AuthError("Invalid cookie")
+    assert e.status_code == 401
+    assert e.retry is True
+
+
+def test_provider_error_custom_status():
+    from app.providers.base import ProviderError
+    e = ProviderError("Bad Gateway", status_code=502, retry=True)
+    assert e.status_code == 502
+    assert e.retry is True
+
+
+def test_deepseek_pow_solution_bounds():
+    from app.providers.deepseek.pow_solver import solve_pow_challenge
+    challenge = {
+        "algorithm": "DeepSeekHashV1",
+        "challenge": "challenge_bound_test",
+        "salt": "salt_abc",
+        "difficulty": 10,
+        "expire_at": 1800000000,
+        "signature": "sig_test",
+        "target_path": "/test"
+    }
+    sol = solve_pow_challenge(challenge)
+    assert sol["answer"] >= 0
+    assert sol["algorithm"] == "DeepSeekHashV1"
+
+
+def test_deepseek_hash_vector_consistency():
+    from app.providers.deepseek.pow_solver import deepseek_hash_v1
+    h1 = deepseek_hash_v1(b"deterministic_input_data")
+    h2 = deepseek_hash_v1(b"deterministic_input_data")
+    assert h1 == h2
+    assert len(h1) == 32
+
+
+def test_gemini_api_payload_with_system_instruction():
+    from app.providers.gemini.engine import GeminiEngine
+    from app.models import UnifiedRequest, UnifiedMessage
+    engine = GeminiEngine()
+    req = UnifiedRequest(
+        model_id="gemini-3.8-flash",
+        provider="gemini",
+        messages=[
+            UnifiedMessage(role="system", text="System instruction text"),
+            UnifiedMessage(role="user", text="User question")
+        ]
+    )
+    payload = asyncio.run(engine._build_api_payload(req))
+    assert "systemInstruction" in payload
+    assert payload["systemInstruction"]["parts"][0]["text"] == "System instruction text"
+    assert payload["contents"][0]["role"] == "user"
+
+
+def test_gemini_api_payload_with_tools():
+    from app.providers.gemini.engine import GeminiEngine
+    from app.models import UnifiedRequest, UnifiedMessage
+    engine = GeminiEngine()
+    req = UnifiedRequest(
+        model_id="gemini-3.8-flash",
+        provider="gemini",
+        messages=[UnifiedMessage(role="user", text="Run tool")],
+        tools=[{
+            "type": "function",
+            "function": {
+                "name": "weather_lookup",
+                "description": "Look up weather",
+                "parameters": {"type": "object", "properties": {"city": {"type": "string"}}}
+            }
+        }]
+    )
+    payload = asyncio.run(engine._build_api_payload(req))
+    assert "tools" in payload
+    assert payload["tools"][0]["function_declarations"][0]["name"] == "weather_lookup"
+
+
+def test_gemini_api_payload_generation_config():
+    from app.providers.gemini.engine import GeminiEngine
+    from app.models import UnifiedRequest, UnifiedMessage
+    engine = GeminiEngine()
+    req = UnifiedRequest(
+        model_id="gemini-3.8-flash",
+        provider="gemini",
+        messages=[UnifiedMessage(role="user", text="Hi")],
+        temperature=0.7,
+        max_tokens=2048
+    )
+    payload = asyncio.run(engine._build_api_payload(req))
+    assert payload["generationConfig"]["temperature"] == 0.7
+    assert payload["generationConfig"]["maxOutputTokens"] == 2048
+
+
+def test_google_proxy_requires_api_key():
+    from unittest.mock import patch, AsyncMock
+    import httpx
+    app = create_app()
+    with TestClient(app) as client:
+        fake_response = httpx.Response(
+            status_code=400,
+            json={"error": {"code": 400, "message": "API key not valid"}},
+            headers={"content-type": "application/json"}
+        )
+        with patch.object(httpx.AsyncClient, "send", new_callable=AsyncMock) as mock_send:
+            mock_send.return_value = fake_response
+            r = client.post(
+                "/google/v1beta/models/gemini-pro:generateContent",
+                json={"contents": [{"parts": [{"text": "Hello"}]}]}
+            )
+            assert r.status_code == 400
+            assert "error" in r.json()
+
+
+def test_google_proxy_with_valid_key_and_mock():
+    from unittest.mock import patch, AsyncMock
+    import httpx
+    app = create_app()
+    with TestClient(app) as client:
+        fake_response = httpx.Response(
+            status_code=200,
+            json={"candidates": [{"content": {"parts": [{"text": "Hello Google Proxy"}]}}]},
+            headers={"content-type": "application/json"}
+        )
+        with patch.object(httpx.AsyncClient, "send", new_callable=AsyncMock) as mock_send:
+            mock_send.return_value = fake_response
+            r = client.post(
+                "/google/v1beta/models/gemini-2.5-flash:generateContent?key=AIzaTestKey",
+                json={"contents": [{"parts": [{"text": "Hello Google Proxy"}]}]}
+            )
+            assert r.status_code == 200
+            assert "candidates" in r.json()
+            called_req = mock_send.call_args[0][0]
+            assert "generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent" in str(called_req.url)
+            assert "key=AIzaTestKey" in str(called_req.url)
+
+
+def test_account_fail_count_increments():
+    from app.database import record_account_use
+    async def _test():
+        acct_id = await add_account("gemini", "Fail Test Acct", {"fail": True})
+        await record_account_use(acct_id, failed=True)
+        accts = await list_accounts("gemini")
+        target = next(a for a in accts if a["id"] == acct_id)
+        assert target["fail_count"] >= 1
+    asyncio.run(_test())
+
+
+def test_account_toggle_disables_usage():
+    from app.database import set_account_enabled
+    async def _test():
+        acct_id = await add_account("deepseek", "Toggle Acct", {"token": "t"})
+        await set_account_enabled(acct_id, False)
+        accts = await list_accounts("deepseek")
+        target = next(a for a in accts if a["id"] == acct_id)
+        assert target["enabled"] == 0
+    asyncio.run(_test())
+
+
+def test_delete_account_removes_from_db():
+    from app.database import delete_account
+    async def _test():
+        acct_id = await add_account("chatgpt", "To Delete", {"token": "d"})
+        await delete_account(acct_id)
+        accts = await list_accounts("chatgpt")
+        assert not any(a["id"] == acct_id for a in accts)
+    asyncio.run(_test())
+
+
+def test_update_account_label_and_credentials():
+    from app.database import update_account
+    async def _test():
+        acct_id = await add_account("gemini", "Initial Label", {"secure_1psid": "p1"})
+        await update_account(acct_id, "Updated Label", {"secure_1psid": "p2"})
+        accts = await list_accounts("gemini")
+        target = next(a for a in accts if a["id"] == acct_id)
+        assert target["label"] == "Updated Label"
+        assert target["credentials"]["secure_1psid"] == "p2"
+    asyncio.run(_test())
+
+
+def test_list_accounts_filter_by_provider():
+    async def _test():
+        await add_account("gemini", "G1", {"p": 1})
+        await add_account("deepseek", "D1", {"p": 2})
+        gem_only = await list_accounts("gemini")
+        assert all(a["provider"] == "gemini" for a in gem_only)
+    asyncio.run(_test())
+
+
+def test_openai_chat_completions_with_tools_emulated_flow():
+    from app.providers.registry import register_provider
+    class ToolYieldingProvider(AbstractProvider):
+        provider_name = "gemini"
+        async def chat(self, request, account_id, credentials):
+            return '```json\n{"tool_calls": [{"name": "calculator", "arguments": {"expr": "2+2"}}]}\n```'
+        async def stream_chat(self, request, account_id, credentials):
+            yield '```json\n{"tool_calls": [{"name": "calculator", "arguments": {"expr": "2+2"}}]}\n```'
+        async def validate(self, credentials):
+            return True
+
+    app = create_app()
+    with TestClient(app) as client:
+        register_provider("gemini", ToolYieldingProvider())
+        r = client.post(
+            "/v1/chat/completions",
+            headers={"Authorization": "Bearer sk-test"},
+            json={
+                "model": "gemini-3.8-flash",
+                "messages": [{"role": "user", "content": "What is 2+2?"}],
+                "tools": [{
+                    "type": "function",
+                    "function": {"name": "calculator", "parameters": {"expr": {"type": "string"}}}
+                }],
+                "stream": False
+            }
+        )
+        assert r.status_code == 200
+        data = r.json()
+        assert data["choices"][0]["finish_reason"] == "tool_calls"
+        calls = data["choices"][0]["message"]["tool_calls"]
+        assert len(calls) == 1
+        assert calls[0]["function"]["name"] == "calculator"
+        assert "2+2" in calls[0]["function"]["arguments"]
+
+
+def test_openai_streaming_tool_calls_interception():
+    from app.providers.registry import register_provider
+    class ToolStreamProvider(AbstractProvider):
+        provider_name = "gemini"
+        async def chat(self, request, account_id, credentials):
+            return '{"name": "fetch_data", "arguments": {"id": 42}}'
+        async def stream_chat(self, request, account_id, credentials):
+            yield '{"name": "fetch_data", "arguments": {"id": 42}}'
+        async def validate(self, credentials):
+            return True
+
+    app = create_app()
+    with TestClient(app) as client:
+        register_provider("gemini", ToolStreamProvider())
+        r = client.post(
+            "/v1/chat/completions",
+            headers={"Authorization": "Bearer sk-test"},
+            json={
+                "model": "gemini-3.8-flash",
+                "messages": [{"role": "user", "content": "Fetch 42"}],
+                "tools": [{
+                    "type": "function",
+                    "function": {"name": "fetch_data", "parameters": {"id": {"type": "integer"}}}
+                }],
+                "stream": True
+            }
+        )
+        assert r.status_code == 200
+        text = r.text
+        assert "tool_calls" in text
+        assert "fetch_data" in text
+        assert "[DONE]" in text
+
+
+
 

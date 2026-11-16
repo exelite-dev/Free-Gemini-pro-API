@@ -41,6 +41,7 @@ async def _get_provider(model_id: str) -> str:
     return model_def.provider
 
 
+@router.post("/v1/messages")
 @router.post("/anthropic/v1/messages")
 async def anthropic_messages(
     req: AnthropicRequest,
@@ -119,11 +120,17 @@ async def _anthropic_sse_generator(
     output_chars = 0
     try:
         async for chunk in pool.stream_chat(unified):
-            output_chars += len(chunk)
+            if isinstance(chunk, dict):
+                text_part = chunk.get("reasoning_content") or chunk.get("content") or ""
+            else:
+                text_part = str(chunk)
+            if not text_part:
+                continue
+            output_chars += len(text_part)
             yield _event("content_block_delta", {
                 "type": "content_block_delta",
                 "index": 0,
-                "delta": {"type": "text_delta", "text": chunk},
+                "delta": {"type": "text_delta", "text": text_part},
             })
     except (RateLimitError, AuthError, ProviderError) as e:
         success = False

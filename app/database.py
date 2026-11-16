@@ -79,8 +79,9 @@ CREATE INDEX IF NOT EXISTS idx_metrics_provider ON request_metrics(provider);
 
 @asynccontextmanager
 async def get_db() -> AsyncGenerator[aiosqlite.Connection, None]:
-    async with aiosqlite.connect(_DB_PATH) as db:
+    async with aiosqlite.connect(_DB_PATH, timeout=10.0) as db:
         db.row_factory = aiosqlite.Row
+        await db.execute("PRAGMA busy_timeout = 5000;")
         yield db
 
 
@@ -548,4 +549,13 @@ async def get_metrics_summary(since_seconds: int = 3600) -> Dict[str, Any]:
                 for r in rows
             ]
 
-    return {"per_provider": per_provider, "time_series": time_series}
+        total = sum(p["total"] for p in per_provider.values())
+        successes = sum(p["successes"] for p in per_provider.values())
+
+    return {
+        "per_provider": per_provider,
+        "providers": per_provider,
+        "total": total,
+        "successes": successes,
+        "time_series": time_series,
+    }

@@ -254,9 +254,9 @@ class GeminiEngine(AbstractProvider):
 
     provider_name = "gemini"
 
-    def __init__(self, config: Dict[str, Any]):
-        self.config = config
-        self.request_timeout = config.get("request_timeout", 60)
+    def __init__(self, config: Optional[Dict[str, Any]] = None):
+        self.config = config or {}
+        self.request_timeout = self.config.get("request_timeout", 60)
 
     async def _get_session_tokens(
         self, session: AsyncSession, credentials: Dict[str, Any], account_id: int = 0
