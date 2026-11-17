@@ -16,3 +16,4 @@ anyio>=4.3.0
 itsdangerous>=2.2.0
 
 sqlalchemy[asyncio]>=2.0.0
+pytest>=8.0.0
