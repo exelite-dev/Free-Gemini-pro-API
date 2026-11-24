@@ -1057,5 +1057,124 @@ def test_openai_streaming_tool_calls_interception():
         assert "[DONE]" in text
 
 
+# ── Anti-Ban & Subscription Shield Tests ─────────────────────────────────────
+
+def test_config_anti_ban_defaults():
+    from app.config import settings
+    assert settings.anti_ban_shield is True
+    assert settings.min_request_jitter >= 0
+    assert settings.max_request_jitter >= settings.min_request_jitter
+
+
+def test_gemini_client_hints_and_modern_headers():
+    from app.providers.gemini.engine import _CLIENT_HINTS_HEADERS, _CHROME_VERSION, _USER_AGENT
+    assert _CHROME_VERSION == "131"
+    assert "131" in _USER_AGENT
+    assert "Chromium" in _CLIENT_HINTS_HEADERS["sec-ch-ua"]
+    assert _CLIENT_HINTS_HEADERS["sec-ch-ua-mobile"] == "?0"
+    assert _CLIENT_HINTS_HEADERS["sec-ch-ua-platform"] == '"Windows"'
+    assert _CLIENT_HINTS_HEADERS["sec-fetch-dest"] == "empty"
+    assert _CLIENT_HINTS_HEADERS["sec-fetch-mode"] == "cors"
+    assert _CLIENT_HINTS_HEADERS["sec-fetch-site"] == "same-origin"
+
+
+def test_gemini_session_cache_avoids_repeated_init():
+    from app.providers.gemini.engine import GeminiEngine, _SESSION_CACHE
+    from unittest.mock import AsyncMock, patch, MagicMock
+
+    engine = GeminiEngine()
+    fake_html = 'window.WIZ_global_data = {"SNlM0e":"test_at_token_abc","cfb2h":"test_bl_token","FdrFJe":"test_session_id"};'
+    mock_resp = MagicMock()
+    mock_resp.status_code = 200
+    mock_resp.text = fake_html
+    mock_resp.cookies = {}
+
+    session = MagicMock()
+    session.get = AsyncMock(return_value=mock_resp)
+
+    _SESSION_CACHE.clear()
+    account_id = 999
+    creds = {"secure_1psid": "fake_psid"}
+
+    async def _run():
+        # First call: hits session.get and caches
+        at1, bl1, sid1 = await engine._get_session_tokens(session, creds, account_id=account_id)
+        assert at1 == "test_at_token_abc"
+        assert session.get.call_count == 1
+        assert account_id in _SESSION_CACHE
+
+        # Second call: served directly from _SESSION_CACHE without network request!
+        at2, bl2, sid2 = await engine._get_session_tokens(session, creds, account_id=account_id)
+        assert at2 == "test_at_token_abc"
+        assert session.get.call_count == 1  # Still 1! Zero extra HTTP requests
+
+        # Force refresh: forces network request
+        at3, bl3, sid3 = await engine._get_session_tokens(session, creds, account_id=account_id, force_refresh=True)
+        assert session.get.call_count == 2  # Incremented to 2
+
+    asyncio.run(_run())
+    _SESSION_CACHE.clear()
+
+
+def test_pool_account_concurrency_lock():
+    from app.providers.pool import AccountPool
+    class SlowProvider(AbstractProvider):
+        provider_name = "test_provider"
+        def __init__(self):
+            self.running = 0
+            self.max_concurrent = 0
+
+        async def chat(self, request, account_id, credentials):
+            self.running += 1
+            if self.running > self.max_concurrent:
+                self.max_concurrent = self.running
+            await asyncio.sleep(0.05)
+            self.running -= 1
+            return "ok"
+
+        async def stream_chat(self, request, account_id, credentials):
+            yield "ok"
+
+        async def validate(self, credentials):
+            return True
+
+    provider = SlowProvider()
+    pool = AccountPool("test_provider", provider)
+
+    async def _run():
+        req = UnifiedRequest(model_id="test", provider="test_provider", messages=[])
+        # Two simultaneous tasks for account #1
+        task1 = asyncio.create_task(pool.chat(req))
+        task2 = asyncio.create_task(pool.chat(req))
+        await asyncio.gather(task1, task2)
+
+        # Max concurrent executions on the same account must be exactly 1!
+        assert provider.max_concurrent == 1
+
+    asyncio.run(_run())
+
+
+def test_cookie_refresh_skips_recently_active_account():
+    import time
+    from app.providers.gemini.cookie_refresh import _refresh_single_account
+    from unittest.mock import AsyncMock, patch
+
+    recent_account = {
+        "id": 888,
+        "label": "Recent Account",
+        "credentials": {"secure_1psid": "p"},
+        "last_used": time.time() - 300,  # 5 minutes ago
+    }
+
+    async def _run():
+        with patch("app.providers.gemini.engine.GeminiEngine._get_session_tokens", new_callable=AsyncMock) as mock_get:
+            await _refresh_single_account(recent_account)
+            # Must NOT call _get_session_tokens because account was active recently!
+            assert mock_get.call_count == 0
+
+    asyncio.run(_run())
+
+
+
 
 

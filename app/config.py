@@ -79,6 +79,12 @@ class Settings(BaseSettings):
     deepseek_enabled: bool = True
     chatgpt_enabled: bool = True
 
+    # Anti-Ban Shield & Proxy Settings
+    gemini_proxy: Optional[str] = None
+    anti_ban_shield: bool = True
+    min_request_jitter: float = 1.2
+    max_request_jitter: float = 2.8
+
     # Config file path
     config_file: str = "./config.yaml"
 
@@ -111,6 +117,16 @@ class Settings(BaseSettings):
             self.admin_password = str(admin_cfg["password"])
         if "ADMIN_SECRET_KEY" not in os.environ and "secret_key" in admin_cfg:
             self.admin_secret_key = str(admin_cfg["secret_key"])
+
+        gemini_cfg = self._yaml_cfg.get("providers", {}).get("gemini", {})
+        if "GEMINI_PROXY" not in os.environ and "proxy" in gemini_cfg:
+            self.gemini_proxy = str(gemini_cfg["proxy"])
+        if "ANTI_BAN_SHIELD" not in os.environ and "anti_ban_shield" in gemini_cfg:
+            self.anti_ban_shield = bool(gemini_cfg["anti_ban_shield"])
+        if "MIN_REQUEST_JITTER" not in os.environ and "min_request_jitter" in gemini_cfg:
+            self.min_request_jitter = float(gemini_cfg["min_request_jitter"])
+        if "MAX_REQUEST_JITTER" not in os.environ and "max_request_jitter" in gemini_cfg:
+            self.max_request_jitter = float(gemini_cfg["max_request_jitter"])
 
         self._load_models()
 

@@ -14,6 +14,8 @@ import uuid
 from typing import Any, AsyncGenerator, Dict, List, Optional, Union
 
 import base64
+import random
+import time
 import httpx
 from curl_cffi.requests import AsyncSession
 
@@ -40,6 +42,26 @@ _GENERATE_URL = (
     "StreamGenerate"
 )
 _INIT_URL = "https://gemini.google.com/app"
+
+# ── Anti-Ban Shield, Modern Client Hints & Session Cache ──────────────────────
+_SESSION_CACHE: Dict[int, Dict[str, Any]] = {}
+_SESSION_CACHE_TTL = 1500  # 25 minutes cache TTL to prevent redundant /app scraping
+
+_CHROME_VERSION = "131"
+_USER_AGENT = (
+    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
+    "AppleWebKit/537.36 (KHTML, like Gecko) "
+    f"Chrome/{_CHROME_VERSION}.0.0.0 Safari/537.36"
+)
+
+_CLIENT_HINTS_HEADERS: Dict[str, str] = {
+    "sec-ch-ua": f'"Chromium";v="{_CHROME_VERSION}", "Google Chrome";v="{_CHROME_VERSION}", "Not_A Brand";v="24"',
+    "sec-ch-ua-mobile": "?0",
+    "sec-ch-ua-platform": '"Windows"',
+    "sec-fetch-dest": "empty",
+    "sec-fetch-mode": "cors",
+    "sec-fetch-site": "same-origin",
+}
 
 # ── Model IDs → internal Gemini model header IDs ──────────────────────────────
 _MODEL_HEADERS: Dict[str, Dict[str, str]] = {
@@ -259,27 +281,38 @@ class GeminiEngine(AbstractProvider):
         self.request_timeout = self.config.get("request_timeout", 60)
 
     async def _get_session_tokens(
-        self, session: AsyncSession, credentials: Dict[str, Any], account_id: int = 0
+        self, session: AsyncSession, credentials: Dict[str, Any], account_id: int = 0, force_refresh: bool = False
     ) -> tuple[str, str, str]:
-        """Fetch AT token, BL token, and session ID from Gemini's main page."""
+        """Fetch AT token, BL token, and session ID from Gemini's main page with in-memory caching."""
+        now = time.time()
+        if not force_refresh and account_id > 0 and account_id in _SESSION_CACHE:
+            cached = _SESSION_CACHE[account_id]
+            if now < cached.get("expires_at", 0):
+                return cached["at_token"], cached["bl_token"], cached["session_id"]
+
         cookie_header = _build_cookie_header(credentials)
         resp = await session.get(
             _INIT_URL,
             headers={
                 "Cookie": cookie_header,
-                "User-Agent": (
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                    "AppleWebKit/537.36 (KHTML, like Gecko) "
-                    "Chrome/120.0.0.0 Safari/537.36"
-                ),
-                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                "User-Agent": _USER_AGENT,
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8",
                 "Accept-Language": "en-US,en;q=0.9",
                 "Referer": "https://gemini.google.com/",
+                "sec-ch-ua": _CLIENT_HINTS_HEADERS["sec-ch-ua"],
+                "sec-ch-ua-mobile": "?0",
+                "sec-ch-ua-platform": '"Windows"',
+                "sec-fetch-dest": "document",
+                "sec-fetch-mode": "navigate",
+                "sec-fetch-site": "same-origin",
+                "sec-fetch-user": "?1",
+                "upgrade-insecure-requests": "1",
             },
-            impersonate="chrome120",
+            impersonate="chrome131",
             timeout=30,
         )
         if resp.status_code in (401, 403):
+            _SESSION_CACHE.pop(account_id, None)
             raise AuthError("Gemini cookie authentication failed. Please refresh cookies.")
         if resp.status_code != 200:
             raise ProviderError(f"Gemini init page returned {resp.status_code}", retry=True)
@@ -300,10 +333,20 @@ class GeminiEngine(AbstractProvider):
                     logger.info("Auto-refreshed __Secure-1PSIDTS for account #%d.", account_id)
 
         if not at_token:
+            _SESSION_CACHE.pop(account_id, None)
             raise AuthError(
                 "کوکی‌های اکانت Google Gemini منقضی شده‌اند.\n"
                 f"لطفاً وارد پنل مدیریت (http://localhost:{settings.port}/admin) ← مدیریت اکانت‌ها شده و کوکی جدید __Secure-1PSIDTS را کپی و ویرایش کنید."
             )
+
+        if account_id > 0:
+            _SESSION_CACHE[account_id] = {
+                "at_token": at_token,
+                "bl_token": bl_token,
+                "session_id": session_id,
+                "expires_at": now + _SESSION_CACHE_TTL,
+            }
+
         return at_token, bl_token, session_id
 
     async def _download_image(self, url: str) -> Optional[tuple[str, str]]:
@@ -514,9 +557,16 @@ class GeminiEngine(AbstractProvider):
         if system_prompt:
             prompt = f"{system_prompt}\n\n{prompt}"
 
-        async with AsyncSession(impersonate="chrome120", timeout=self.request_timeout) as client:
+        # Anti-Ban Jitter: humanized delay between turns
+        if settings.anti_ban_shield and settings.min_request_jitter > 0:
+            jitter = random.uniform(settings.min_request_jitter, settings.max_request_jitter)
+            await asyncio.sleep(jitter)
+
+        proxy = credentials.get("proxy") or settings.gemini_proxy
+
+        async with AsyncSession(impersonate="chrome131", proxy=proxy, timeout=self.request_timeout) as client:
             try:
-                # Step 1: Get session tokens
+                # Step 1: Get session tokens (cached when valid)
                 at_token, bl_token, session_id = await self._get_session_tokens(client, credentials, account_id)
 
                 # Step 2: Build inner request list (gemini-webapi v2 format)
@@ -540,20 +590,17 @@ class GeminiEngine(AbstractProvider):
                 if session_id:
                     params["f.sid"] = session_id
 
-                # Step 5: Build headers with model selection
+                # Step 5: Build headers with model selection and modern Client Hints
                 model_headers = _get_model_headers(request.model_id)
                 request_headers = {
                     "Cookie": cookie_header,
                     "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
-                    "User-Agent": (
-                        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-                        "AppleWebKit/537.36 (KHTML, like Gecko) "
-                        "Chrome/120.0.0.0 Safari/537.36"
-                    ),
+                    "User-Agent": _USER_AGENT,
                     "Origin": "https://gemini.google.com",
                     "Referer": "https://gemini.google.com/",
                     "X-Same-Domain": "1",
                     "x-goog-ext-525005358-jspb": f'["{uuid_val}",1]',
+                    **_CLIENT_HINTS_HEADERS,
                     **model_headers,
                 }
 
@@ -573,6 +620,7 @@ class GeminiEngine(AbstractProvider):
                 )
 
                 if resp.status_code in (401, 403):
+                    _SESSION_CACHE.pop(account_id, None)
                     raise AuthError("کوکی‌های جمنای رد شدند. لطفاً آن‌ها را تازه‌سازی کنید.")
                 if resp.status_code != 200:
                     raise ProviderError(f"خطای سرور جمنای: {resp.status_code}", retry=True)

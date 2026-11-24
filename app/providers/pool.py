@@ -39,6 +39,12 @@ class AccountPool:
         self._lock = asyncio.Lock()
         self._index = 0
         self._backoff: Dict[int, float] = {}   # account_id → available-after timestamp
+        self._account_locks: Dict[int, asyncio.Lock] = {}
+
+    def _get_account_lock(self, account_id: int) -> asyncio.Lock:
+        if account_id not in self._account_locks:
+            self._account_locks[account_id] = asyncio.Lock()
+        return self._account_locks[account_id]
 
     async def _pick_account(self, exclude_ids: Optional[set] = None) -> Optional[Dict[str, Any]]:
         """Round-robin/random pick from the database, skipping accounts in cooldown or already tried."""
@@ -64,14 +70,16 @@ class AccountPool:
                     break
 
             tried.add(acct["id"])
+            lock = self._get_account_lock(acct["id"])
 
             try:
-                result = await self.engine.chat(
-                    request, acct["id"], acct["credentials"]
-                )
-                if acct["id"] != 0:
-                    await record_account_use(acct["id"], failed=False)
-                return result
+                async with lock:
+                    result = await self.engine.chat(
+                        request, acct["id"], acct["credentials"]
+                    )
+                    if acct["id"] != 0:
+                        await record_account_use(acct["id"], failed=False)
+                    return result
             except RateLimitError as e:
                 logger.warning("Account %d rate-limited. Putting in DB cooldown.", acct["id"])
                 if acct["id"] != 0:
@@ -107,17 +115,19 @@ class AccountPool:
                     break
 
             tried.add(acct["id"])
-
+            lock = self._get_account_lock(acct["id"])
             has_yielded = False
+
             try:
-                async for chunk in self.engine.stream_chat(
-                    request, acct["id"], acct["credentials"]
-                ):
-                    has_yielded = True
-                    yield chunk
-                if acct["id"] != 0:
-                    await record_account_use(acct["id"], failed=False)
-                return
+                async with lock:
+                    async for chunk in self.engine.stream_chat(
+                        request, acct["id"], acct["credentials"]
+                    ):
+                        has_yielded = True
+                        yield chunk
+                    if acct["id"] != 0:
+                        await record_account_use(acct["id"], failed=False)
+                    return
             except RateLimitError as e:
                 logger.warning("Account %d rate-limited. Putting in DB cooldown.", acct["id"])
                 if acct["id"] != 0:
